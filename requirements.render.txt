@@ -1,0 +1,4 @@
+# Optional video encoding dependencies; validated in the existing CPU environment.
+-r requirements.lock.txt
+imageio==2.38.0
+imageio-ffmpeg==0.6.0

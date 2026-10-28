@@ -1,0 +1,8 @@
+name: cs593
+channels:
+  - defaults
+dependencies:
+  - python=3.10.22
+  - pip=25.2
+  - pip:
+      - -r requirements.lock.txt
