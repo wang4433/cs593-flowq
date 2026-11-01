@@ -46,6 +46,7 @@ def log_jacobian(y):
 
 
 def rk4(fn, y, start, stop, steps):
+    """Inference-only RK4; detaching stages intentionally prevents ODE backprop."""
     if steps < 1:
         raise ValueError("ODE steps must be positive")
     h = (stop-start)/steps
@@ -81,13 +82,18 @@ class Flow(nn.Module):
         s = (s[..., :self.obs_dim]-self.mean)/self.std
         time = torch.full_like(x[..., :1], float(t)) if not torch.is_tensor(t) else t
         v = self.net(torch.cat([s, x, time], -1))
-        # A bounded smooth vector field prevents OOD states from driving the
-        # tanh action transform to floating-point saturation. This changes the
+        # A bounded smooth vector field limits OOD drift. Unbounded Gaussian
+        # tails can still saturate tanh, so decode checks this explicitly. This changes the
         # trained model, not the sampled action; it preserves an invertible ODE.
         return v if self.max_velocity is None else self.max_velocity*torch.tanh(v/self.max_velocity)
 
     def loss(self, s, actions, boundary_epsilon=1e-3):
         # Deterministic inward smoothing of empirical boundary commands, training only.
+        finite(s, 'BC state')
+        finite(actions, 'BC action')
+        if (s.ndim != 2 or actions.ndim != 2 or len(s) != len(actions)
+                or s.shape[-1] < self.obs_dim or actions.shape[-1] != self.action_dim):
+            raise ValueError('Expected matching batches of states and actions')
         if (actions.abs()>1).any():
             raise ValueError('Demonstration action outside [-1,1]')
         if not 0 < boundary_epsilon < 1:
@@ -102,17 +108,51 @@ class Flow(nn.Module):
         return loss
 
     @torch.no_grad()
-    def sample(self, s, steps=16, generator=None):
-        z = torch.randn((*s.shape[:-1], self.continuous_dim), dtype=s.dtype,
-                        device=s.device, generator=generator)
+    def decode(self, s, z, steps=16):
+        """Deterministic continuous arm command from explicit noise; no gripper.
+
+        This inference interface deliberately does not differentiate through the
+        flow. DSRL learns a separate differentiable noise critic instead.
+        """
+        if (s.ndim != 2 or s.shape[-1] < self.obs_dim
+                or z.shape != (len(s), self.continuous_dim)):
+            raise ValueError('Expected batched states and matching continuous noise')
+        finite(s, 'decode state'); finite(z, 'decode noise')
         y = rk4(lambda t,x:self.velocity(t,x,s), z, 0, 1, steps)
         a = torch.tanh(y)
         if (a.abs()>=1).any():
             raise FloatingPointError('Floating-point tanh saturation; action density is undefined')
+        return a
+
+    @torch.no_grad()
+    def encode(self, s, arm, steps=16):
+        """Invert continuous commands only (numerically); no boundary smoothing.
+
+        The stochastic categorical gripper has no inverse. Exact +/-1 commands
+        cannot be inverted; callers must not silently clip demonstration actions.
+        """
+        if (s.ndim != 2 or s.shape[-1] < self.obs_dim
+                or arm.shape != (len(s), self.continuous_dim)):
+            raise ValueError('Expected batched states and continuous commands')
+        finite(s, 'encode state'); finite(arm, 'encode action')
+        if (arm.abs() >= 1).any():
+            raise ValueError('encode requires continuous commands strictly inside (-1,1)')
+        return rk4(lambda t,x:self.velocity(t,x,s), torch.atanh(arm), 1, 0, steps)
+
+    @torch.no_grad()
+    def action_from_noise(self, s, z, steps=16, generator=None):
+        """Decode the arm and independently sample the frozen gripper head."""
+        a = self.decode(s, z, steps)
         if self.hybrid:
             grip = torch.multinomial(self.gripper_dist(s).probs, 1, generator=generator)-1
             a = torch.cat([a, grip.to(a.dtype)], -1)
         return a
+
+    @torch.no_grad()
+    def sample(self, s, steps=16, generator=None):
+        z = torch.randn((*s.shape[:-1], self.continuous_dim), dtype=s.dtype,
+                        device=s.device, generator=generator)
+        return self.action_from_noise(s, z, steps, generator)
 
     def log_prob(self, s, a, steps=16, trace='exact', trace_samples=1, generator=None):
         if a.shape[-1] != self.action_dim or (a[..., :self.continuous_dim].abs()>=1).any():

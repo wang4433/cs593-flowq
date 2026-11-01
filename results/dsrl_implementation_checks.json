@@ -1,0 +1,58 @@
+{
+  "date": "2026-11-01",
+  "test_suites": {
+    "original_numerics_and_flow_interfaces": {
+      "tests": 7,
+      "passed": 7
+    },
+    "dsrl": {
+      "tests": 5,
+      "passed": 5
+    }
+  },
+  "synthetic_test": {
+    "description": "Analytic two-mode flow, two-state terminal bandit; action-only training replay",
+    "bc_rewarded_mode_fraction": 0.506,
+    "steered_rewarded_mode_fraction": 1.0,
+    "not_robotics_performance": true
+  },
+  "trained_checkpoint_roundtrip": {
+    "lift": {
+      "16": 0.00019758990407936494,
+      "32": 6.225620153399447e-06,
+      "64": 1.9492707759027894e-07
+    },
+    "can": {
+      "16": 6.471695524745691e-05,
+      "32": 2.0272169380941563e-06,
+      "64": 6.338568625530172e-08
+    },
+    "square": {
+      "16": 9.018798981030862e-05,
+      "32": 2.8449221529669444e-06,
+      "64": 8.910556159591465e-08
+    }
+  },
+  "roundtrip_scope": "8 fixed states from episode_000 per existing task evaluation; Gaussian noise seed 71; maximum coordinate absolute error; all fingerprints unchanged",
+  "simulator_smoke": {
+    "flow_sha256": "91c842480ae2bdd7b0ea83ceb78ce131ae0212d6775dce7b6d7102ffb75d1ced",
+    "frozen_unchanged": true,
+    "warmup_env_steps": 44,
+    "online_env_steps": 4,
+    "training_env_steps": 48,
+    "evaluation_env_steps": 600,
+    "all_simulator_steps": 648,
+    "updates": 8,
+    "retained_replay_transitions": 48
+  },
+  "smoke_evaluation": {
+    "bc_successes": 0,
+    "dsrl_successes": 0,
+    "episodes_per_method": 1,
+    "seed": 40000,
+    "performance_improvement_claimed": false
+  },
+  "local_artifacts": "runs/dsrl_smoke_20261101/",
+  "checkpoint_reload_evaluation_matches": true,
+  "checkpoint_reload_extra_simulator_steps": 600
+}

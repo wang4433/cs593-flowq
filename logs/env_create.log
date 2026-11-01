@@ -1,0 +1,1446 @@
+Channels:
+ - defaults
+ - conda-forge
+Platform: linux-64
+Collecting package metadata (repodata.json): ...working... done
+Solving environment: ...working... done
+
+
+==> WARNING: A newer version of conda exists. <==
+    current version: 25.3.1
+    latest version: 26.9.4
+
+Please update conda by running
+
+    $ conda update -n base -c conda-forge conda
+
+
+
+## Package Plan ##
+
+  environment location: /scratch/gilbreth/hmoondra/cs593_project/cs593-flowq/.conda/envs/cs593
+
+  added / updated specs:
+    - pip
+    - python=3.10
+
+
+The following packages will be downloaded:
+
+    package                    |            build
+    ---------------------------|-----------------
+    _libgcc_mutex-0.1          |             main           3 KB
+    _openmp_mutex-5.1          |           52_gnu           7 KB
+    bzip2-1.0.8                |       h5eee18b_6         262 KB
+    ca-certificates-2026.10.20 |       h06a4308_0         113 KB
+    ld_impl_linux-64-2.44      |       h9e0c5a2_3         725 KB
+    libexpat-2.9.0             |       h7354ed3_0         131 KB
+    libffi-3.4.8               |       h06d3fd0_3         137 KB
+    libgcc-15.2.0              |       h69a1729_8         803 KB
+    libgcc-ng-15.2.0           |       h166f726_8          28 KB
+    libnsl-2.0.0               |       h5eee18b_0          31 KB
+    libstdcxx-15.2.0           |       h39759b7_8         3.7 MB
+    libuuid-1.41.5             |       h5eee18b_0          27 KB
+    libxcb-1.17.0              |       h9b100fa_0         430 KB
+    libzlib-1.3.2              |       h47b2149_0          60 KB
+    ncurses-6.6                |       hfaaeb4e_0         893 KB
+    openssl-3.5.9              |       h1b28b03_0         5.7 MB
+    packaging-26.3             |  py310h06a4308_0         329 KB
+    pip-26.2.2                 |     pyhc872135_0         1.1 MB
+    pthread-stubs-0.3          |       h47b2149_2           7 KB
+    python-3.10.22             |       hd9cb797_0        24.4 MB
+    readline-8.3               |       hc2a1206_0         471 KB
+    setuptools-84.0.0          |  py310h06a4308_0         968 KB
+    sqlite-3.53.4              |       h795bf6d_0         1.2 MB
+    tk-8.6.15                  |       h54e0aa7_0         3.4 MB
+    tzdata-2026c               |       he532380_0         117 KB
+    wheel-0.48.0               |  py310h06a4308_0          59 KB
+    xorg-libx11-1.8.14         |       h65de747_0         820 KB
+    xorg-libxau-1.0.12         |       h9b100fa_0          13 KB
+    xorg-libxdmcp-1.1.5        |       h9b100fa_0          19 KB
+    xorg-xorgproto-2025.1      |       h47b2149_0         555 KB
+    xz-5.8.4                   |       h140a991_0         652 KB
+    zlib-1.3.2                 |       h47b2149_0          92 KB
+    ------------------------------------------------------------
+                                           Total:        47.2 MB
+
+The following NEW packages will be INSTALLED:
+
+  _libgcc_mutex      pkgs/main/linux-64::_libgcc_mutex-0.1-main 
+  _openmp_mutex      pkgs/main/linux-64::_openmp_mutex-5.1-52_gnu 
+  bzip2              pkgs/main/linux-64::bzip2-1.0.8-h5eee18b_6 
+  ca-certificates    pkgs/main/linux-64::ca-certificates-2026.10.20-h06a4308_0 
+  ld_impl_linux-64   pkgs/main/linux-64::ld_impl_linux-64-2.44-h9e0c5a2_3 
+  libexpat           pkgs/main/linux-64::libexpat-2.9.0-h7354ed3_0 
+  libffi             pkgs/main/linux-64::libffi-3.4.8-h06d3fd0_3 
+  libgcc             pkgs/main/linux-64::libgcc-15.2.0-h69a1729_8 
+  libgcc-ng          pkgs/main/linux-64::libgcc-ng-15.2.0-h166f726_8 
+  libnsl             pkgs/main/linux-64::libnsl-2.0.0-h5eee18b_0 
+  libstdcxx          pkgs/main/linux-64::libstdcxx-15.2.0-h39759b7_8 
+  libuuid            pkgs/main/linux-64::libuuid-1.41.5-h5eee18b_0 
+  libxcb             pkgs/main/linux-64::libxcb-1.17.0-h9b100fa_0 
+  libzlib            pkgs/main/linux-64::libzlib-1.3.2-h47b2149_0 
+  ncurses            pkgs/main/linux-64::ncurses-6.6-hfaaeb4e_0 
+  openssl            pkgs/main/linux-64::openssl-3.5.9-h1b28b03_0 
+  packaging          pkgs/main/linux-64::packaging-26.3-py310h06a4308_0 
+  pip                pkgs/main/noarch::pip-26.2.2-pyhc872135_0 
+  pthread-stubs      pkgs/main/linux-64::pthread-stubs-0.3-h47b2149_2 
+  python             pkgs/main/linux-64::python-3.10.22-hd9cb797_0 
+  readline           pkgs/main/linux-64::readline-8.3-hc2a1206_0 
+  setuptools         pkgs/main/linux-64::setuptools-84.0.0-py310h06a4308_0 
+  sqlite             pkgs/main/linux-64::sqlite-3.53.4-h795bf6d_0 
+  tk                 pkgs/main/linux-64::tk-8.6.15-h54e0aa7_0 
+  tzdata             pkgs/main/noarch::tzdata-2026c-he532380_0 
+  wheel              pkgs/main/linux-64::wheel-0.48.0-py310h06a4308_0 
+  xorg-libx11        pkgs/main/linux-64::xorg-libx11-1.8.14-h65de747_0 
+  xorg-libxau        pkgs/main/linux-64::xorg-libxau-1.0.12-h9b100fa_0 
+  xorg-libxdmcp      pkgs/main/linux-64::xorg-libxdmcp-1.1.5-h9b100fa_0 
+  xorg-xorgproto     pkgs/main/linux-64::xorg-xorgproto-2025.1-h47b2149_0 
+  xz                 pkgs/main/linux-64::xz-5.8.4-h140a991_0 
+  zlib               pkgs/main/linux-64::zlib-1.3.2-h47b2149_0 
+
+
+
+Downloading and Extracting Packages: ...working...python-3.10.22       | 24.4 MB   |            |   0% 
+openssl-3.5.9        | 5.7 MB    |            |   0% [A
+
+libstdcxx-15.2.0     | 3.7 MB    |            |   0% [A[A
+
+
+tk-8.6.15            | 3.4 MB    |            |   0% [A[A[A
+
+
+
+sqlite-3.53.4        | 1.2 MB    |            |   0% [A[A[A[A
+
+
+
+
+pip-26.2.2           | 1.1 MB    |            |   0% [A[A[A[A[A
+
+
+
+
+
+setuptools-84.0.0    | 968 KB    |            |   0% [A[A[A[A[A[A
+
+
+
+
+
+
+ncurses-6.6          | 893 KB    |            |   0% [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+xorg-libx11-1.8.14   | 820 KB    |            |   0% [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+libgcc-15.2.0        | 803 KB    |            |   0% [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+ld_impl_linux-64-2.4 | 725 KB    |            |   0% [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+xz-5.8.4             | 652 KB    |            |   0% [A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+xorg-xorgproto-2025. | 555 KB    |            |   0% [A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+readline-8.3         | 471 KB    |            |   0% [A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+libxcb-1.17.0        | 430 KB    |            |   0% [A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+packaging-26.3       | 329 KB    |            |   0% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bzip2-1.0.8          | 262 KB    |            |   0% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libffi-3.4.8         | 137 KB    |            |   0% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libexpat-2.9.0       | 131 KB    |            |   0% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ... (more hidden) ...[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[Apython-3.10.22       | 24.4 MB   | 3          |   3% 
+openssl-3.5.9        | 5.7 MB    | ##1        |  22% [A
+
+libstdcxx-15.2.0     | 3.7 MB    | ###1       |  32% [A[A
+
+
+tk-8.6.15            | 3.4 MB    | ###2       |  32% [A[A[A
+
+
+
+sqlite-3.53.4        | 1.2 MB    | #########2 |  92% [A[A[A[A
+
+
+
+sqlite-3.53.4        | 1.2 MB    | ########## | 100% [A[A[A[A
+
+
+tk-8.6.15            | 3.4 MB    | ########## | 100% [A[A[A
+
+libstdcxx-15.2.0     | 3.7 MB    | ########## | 100% [A[A
+openssl-3.5.9        | 5.7 MB    | ########## | 100% [Apython-3.10.22       | 24.4 MB   | ######5    |  66% 
+
+
+
+
+
+setuptools-84.0.0    | 968 KB    | 1          |   2% [A[A[A[A[A[A
+
+
+
+
+
+
+ncurses-6.6          | 893 KB    | 1          |   2% [A[A[A[A[A[A[A
+
+
+
+
+pip-26.2.2           | 1.1 MB    | 1          |   1% [A[A[A[A[A
+
+
+
+
+
+setuptools-84.0.0    | 968 KB    | ########## | 100% [A[A[A[A[A[A
+
+
+
+
+
+
+ncurses-6.6          | 893 KB    | ########## | 100% [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+xorg-libx11-1.8.14   | 820 KB    | 1          |   2% [A[A[A[A[A[A[A[A
+
+
+
+
+pip-26.2.2           | 1.1 MB    | ########## | 100% [A[A[A[A[A
+
+
+
+
+
+
+
+xorg-libx11-1.8.14   | 820 KB    | ########## | 100% [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+libgcc-15.2.0        | 803 KB    | 1          |   2% [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+xz-5.8.4             | 652 KB    | 2          |   2% [A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+ld_impl_linux-64-2.4 | 725 KB    | 2          |   2% [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+xorg-xorgproto-2025. | 555 KB    | 2          |   3% [A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+libgcc-15.2.0        | 803 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+xz-5.8.4             | 652 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+xorg-xorgproto-2025. | 555 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[Apython-3.10.22       | 24.4 MB   | ########## | 100% 
+
+
+
+
+
+
+
+
+
+
+
+
+readline-8.3         | 471 KB    | 3          |   3% [A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+readline-8.3         | 471 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+libxcb-1.17.0        | 430 KB    | 3          |   4% [A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bzip2-1.0.8          | 262 KB    | 6          |   6% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bzip2-1.0.8          | 262 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+packaging-26.3       | 329 KB    | 4          |   5% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+packaging-26.3       | 329 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+ld_impl_linux-64-2.4 | 725 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+libxcb-1.17.0        | 430 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libffi-3.4.8         | 137 KB    | #1         |  12% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libexpat-2.9.0       | 131 KB    | #2         |  12% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libffi-3.4.8         | 137 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libexpat-2.9.0       | 131 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ... (more hidden) ...[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+sqlite-3.53.4        | 1.2 MB    | ########## | 100% [A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ... (more hidden) ...[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+libstdcxx-15.2.0     | 3.7 MB    | ########## | 100% [A[A
+
+libstdcxx-15.2.0     | 3.7 MB    | ########## | 100% [A[A
+openssl-3.5.9        | 5.7 MB    | ########## | 100% [A
+openssl-3.5.9        | 5.7 MB    | ########## | 100% [A
+
+
+tk-8.6.15            | 3.4 MB    | ########## | 100% [A[A[A
+
+
+tk-8.6.15            | 3.4 MB    | ########## | 100% [A[A[A
+
+
+
+
+
+setuptools-84.0.0    | 968 KB    | ########## | 100% [A[A[A[A[A[A
+
+
+
+
+
+setuptools-84.0.0    | 968 KB    | ########## | 100% [A[A[A[A[A[A
+
+
+
+
+
+
+
+xorg-libx11-1.8.14   | 820 KB    | ########## | 100% [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+xorg-libx11-1.8.14   | 820 KB    | ########## | 100% [A[A[A[A[A[A[A[A
+
+
+
+
+pip-26.2.2           | 1.1 MB    | ########## | 100% [A[A[A[A[A
+
+
+
+
+pip-26.2.2           | 1.1 MB    | ########## | 100% [A[A[A[A[A
+
+
+
+
+
+
+
+
+libgcc-15.2.0        | 803 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+libgcc-15.2.0        | 803 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+xz-5.8.4             | 652 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+xz-5.8.4             | 652 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+xorg-xorgproto-2025. | 555 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+xorg-xorgproto-2025. | 555 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+readline-8.3         | 471 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+readline-8.3         | 471 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bzip2-1.0.8          | 262 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bzip2-1.0.8          | 262 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+packaging-26.3       | 329 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+packaging-26.3       | 329 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+ld_impl_linux-64-2.4 | 725 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+ld_impl_linux-64-2.4 | 725 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+libxcb-1.17.0        | 430 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+libxcb-1.17.0        | 430 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libffi-3.4.8         | 137 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libffi-3.4.8         | 137 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libexpat-2.9.0       | 131 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+libexpat-2.9.0       | 131 KB    | ########## | 100% [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+ncurses-6.6          | 893 KB    | ########## | 100% [A[A[A[A[A[A[A
+
+
+
+
+
+
+ncurses-6.6          | 893 KB    | ########## | 100% [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ... (more hidden) ...[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ... (more hidden) ...[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[Apython-3.10.22       | 24.4 MB   | ########## | 100% 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                      [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A                                                     
+                                                     [A
+
+                                                     [A[A
+
+
+                                                     [A[A[A
+
+
+
+                                                     [A[A[A[A
+
+
+
+
+                                                     [A[A[A[A[A
+
+
+
+
+
+                                                     [A[A[A[A[A[A
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                                     [A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A[A
+[A
+
+[A[A
+
+
+[A[A[A
+
+
+
+[A[A[A[A
+
+
+
+
+[A[A[A[A[A
+
+
+
+
+
+[A[A[A[A[A[A
+
+
+
+
+
+
+[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+[A[A[A[A[A[A[A[A[A[A[A
+
+
+
+
+
+
+
+
+
+
+
+[A[A[A[A[A[A[A[A[A[A[A[A done
+Preparing transaction: - \ | / done
+Verifying transaction: \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / done
+Executing transaction: \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / - \ | / done
+#
+# To activate this environment, use
+#
+#     $ conda activate /scratch/gilbreth/hmoondra/cs593_project/cs593-flowq/.conda/envs/cs593
+#
+# To deactivate an active environment, use
+#
+#     $ conda deactivate
+
+Looking in indexes: https://pypi.org/simple, https://download.pytorch.org/whl/cpu
+Collecting absl-py==2.5.1 (from -r requirements.lock.txt (line 3))
+  Downloading absl_py-2.5.1-py3-none-any.whl.metadata (3.3 kB)
+Collecting etils==1.13.0 (from -r requirements.lock.txt (line 4))
+  Downloading etils-1.13.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting evdev==1.9.3 (from -r requirements.lock.txt (line 5))
+  Downloading evdev-1.9.3.tar.gz (32 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting filelock==3.32.3 (from -r requirements.lock.txt (line 6))
+  Downloading filelock-3.32.3-py3-none-any.whl.metadata (2.0 kB)
+Collecting fsspec==2026.7.0 (from -r requirements.lock.txt (line 7))
+  Downloading fsspec-2026.7.0-py3-none-any.whl.metadata (10 kB)
+Collecting glfw==2.11.0 (from -r requirements.lock.txt (line 8))
+  Downloading glfw-2.11.0-py2.py3-none-manylinux_2_28_x86_64.whl.metadata (5.5 kB)
+Collecting h5py==3.16.0 (from -r requirements.lock.txt (line 9))
+  Downloading h5py-3.16.0-cp310-cp310-manylinux_2_28_x86_64.whl.metadata (3.0 kB)
+Collecting jinja2==3.1.6 (from -r requirements.lock.txt (line 10))
+  Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting llvmlite==0.44.0 (from -r requirements.lock.txt (line 11))
+  Downloading llvmlite-0.44.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.8 kB)
+Collecting markupsafe==3.0.3 (from -r requirements.lock.txt (line 12))
+  Downloading markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (2.7 kB)
+Collecting mpmath==1.3.0 (from -r requirements.lock.txt (line 13))
+  Downloading mpmath-1.3.0-py3-none-any.whl.metadata (8.6 kB)
+Collecting mujoco==3.2.6 (from -r requirements.lock.txt (line 14))
+  Downloading mujoco-3.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (44 kB)
+Collecting networkx==3.4.2 (from -r requirements.lock.txt (line 15))
+  Downloading networkx-3.4.2-py3-none-any.whl.metadata (6.3 kB)
+Collecting numba==0.61.2 (from -r requirements.lock.txt (line 16))
+  Downloading numba-0.61.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.8 kB)
+Collecting numpy==1.26.4 (from -r requirements.lock.txt (line 17))
+  Downloading numpy-1.26.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+Collecting opencv-python==4.11.0.86 (from -r requirements.lock.txt (line 18))
+  Downloading opencv_python-4.11.0.86-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (20 kB)
+Collecting pillow==12.3.0 (from -r requirements.lock.txt (line 19))
+  Downloading pillow-12.3.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (9.1 kB)
+Collecting pynput==1.8.2 (from -r requirements.lock.txt (line 20))
+  Downloading pynput-1.8.2-py2.py3-none-any.whl.metadata (32 kB)
+Collecting pyopengl==3.1.10 (from -r requirements.lock.txt (line 21))
+  Downloading pyopengl-3.1.10-py3-none-any.whl.metadata (3.3 kB)
+Collecting python-xlib==0.33 (from -r requirements.lock.txt (line 22))
+  Downloading python_xlib-0.33-py2.py3-none-any.whl.metadata (6.2 kB)
+Collecting robosuite==1.4.1 (from -r requirements.lock.txt (line 23))
+  Downloading robosuite-1.4.1-py3-none-any.whl.metadata (5.6 kB)
+Collecting scipy==1.15.3 (from -r requirements.lock.txt (line 24))
+  Downloading scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+Collecting six==1.17.0 (from -r requirements.lock.txt (line 25))
+  Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting sympy==1.13.1 (from -r requirements.lock.txt (line 26))
+  Downloading sympy-1.13.1-py3-none-any.whl.metadata (12 kB)
+Collecting termcolor==2.4.0 (from -r requirements.lock.txt (line 27))
+  Downloading termcolor-2.4.0-py3-none-any.whl.metadata (6.1 kB)
+Collecting torch==2.5.1+cpu (from -r requirements.lock.txt (line 28))
+  Downloading torch-2.5.1%2Bcpu-cp310-cp310-linux_x86_64.whl (174.7 MB)
+     ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 174.7/174.7 MB 292.0 MB/s  0:00:00
+Collecting typing-extensions==4.15.0 (from -r requirements.lock.txt (line 29))
+  Downloading typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting importlib_resources (from etils[epath]->mujoco==3.2.6->-r requirements.lock.txt (line 14))
+  Downloading importlib_resources-7.1.0-py3-none-any.whl.metadata (4.0 kB)
+Collecting zipp (from etils[epath]->mujoco==3.2.6->-r requirements.lock.txt (line 14))
+  Downloading zipp-4.1.2-py3-none-any.whl.metadata (3.6 kB)
+Downloading absl_py-2.5.1-py3-none-any.whl (137 kB)
+Downloading etils-1.13.0-py3-none-any.whl (170 kB)
+Downloading filelock-3.32.3-py3-none-any.whl (98 kB)
+Downloading fsspec-2026.7.0-py3-none-any.whl (206 kB)
+Downloading glfw-2.11.0-py2.py3-none-manylinux_2_28_x86_64.whl (248 kB)
+Downloading h5py-3.16.0-cp310-cp310-manylinux_2_28_x86_64.whl (5.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 5.1/5.1 MB 84.8 MB/s  0:00:00
+Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+Downloading llvmlite-0.44.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (42.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 42.4/42.4 MB 101.2 MB/s  0:00:00
+Downloading markupsafe-3.0.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (20 kB)
+Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 635.4 MB/s  0:00:00
+Downloading mujoco-3.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (6.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.4/6.4 MB 36.6 MB/s  0:00:00
+Downloading networkx-3.4.2-py3-none-any.whl (1.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 420.5 MB/s  0:00:00
+Downloading numba-0.61.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (3.8 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.8/3.8 MB 185.2 MB/s  0:00:00
+Downloading numpy-1.26.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (18.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 18.2/18.2 MB 196.8 MB/s  0:00:00
+Downloading opencv_python-4.11.0.86-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (63.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 63.0/63.0 MB 218.8 MB/s  0:00:00
+Downloading pillow-12.3.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (6.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.9/6.9 MB 203.8 MB/s  0:00:00
+Downloading pynput-1.8.2-py2.py3-none-any.whl (92 kB)
+Downloading pyopengl-3.1.10-py3-none-any.whl (3.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 320.8 MB/s  0:00:00
+Downloading python_xlib-0.33-py2.py3-none-any.whl (182 kB)
+Downloading robosuite-1.4.1-py3-none-any.whl (193.5 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 193.5/193.5 MB 76.3 MB/s  0:00:02
+Downloading scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (37.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.7/37.7 MB 113.0 MB/s  0:00:00
+Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+Downloading sympy-1.13.1-py3-none-any.whl (6.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.2/6.2 MB 253.8 MB/s  0:00:00
+Downloading termcolor-2.4.0-py3-none-any.whl (7.7 kB)
+Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+Downloading importlib_resources-7.1.0-py3-none-any.whl (37 kB)
+Downloading zipp-4.1.2-py3-none-any.whl (10 kB)
+Building wheels for collected packages: evdev
+  Building wheel for evdev (pyproject.toml): started
+  Building wheel for evdev (pyproject.toml): finished with status 'done'
+  Created wheel for evdev: filename=evdev-1.9.3-cp310-cp310-linux_x86_64.whl size=77884 sha256=583f1b949f2bb8163be8cb3d27838bf0bdecefee3cccaa7282d3fe35a0b7a681
+  Stored in directory: /tmp/pip-ephem-wheel-cache-6a135vwo/wheels/68/70/b4/3fc7b36d0009ccf99b44add24b4bb0427f802ca6f9e525c3be
+Successfully built evdev
+Installing collected packages: pyopengl, mpmath, glfw, zipp, typing-extensions, termcolor, sympy, six, pillow, numpy, networkx, markupsafe, llvmlite, importlib_resources, fsspec, filelock, evdev, etils, absl-py, scipy, python-xlib, opencv-python, numba, jinja2, h5py, torch, pynput, mujoco, robosuite
+
+Successfully installed absl-py-2.5.1 etils-1.13.0 evdev-1.9.3 filelock-3.32.3 fsspec-2026.7.0 glfw-2.11.0 h5py-3.16.0 importlib_resources-7.1.0 jinja2-3.1.6 llvmlite-0.44.0 markupsafe-3.0.3 mpmath-1.3.0 mujoco-3.2.6 networkx-3.4.2 numba-0.61.2 numpy-1.26.4 opencv-python-4.11.0.86 pillow-12.3.0 pynput-1.8.2 pyopengl-3.1.10 python-xlib-0.33 robosuite-1.4.1 scipy-1.15.3 six-1.17.0 sympy-1.13.1 termcolor-2.4.0 torch-2.5.1+cpu typing-extensions-4.15.0 zipp-4.1.2
+EXIT 0

@@ -27,6 +27,13 @@ local environments and machine-specific setup history are not stored in Git.
 Checkpoint hashes in `results/` identify the locally evaluated models. The
 commands below train new local checkpoints from the original demonstrations.
 
+An additional **DSRL-inspired latent RL pipeline** is implemented in
+`flowq/dsrl.py` and `flowq/dsrl_runner.py`: an action critic learns from
+transitions, a noise critic distills values through the frozen flow, and a
+Gaussian actor learns to select arm noise. See [DSRL usage, audit, and context
+extension design](docs/DSRL.md). It has algorithmic tests and a bounded smoke
+check; no full robotics RL improvement experiment is claimed.
+
 ## Setup
 
 Validated on Linux, Python 3.10.22, torch 2.5.1+cpu, numpy 1.26.4,

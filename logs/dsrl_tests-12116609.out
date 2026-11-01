@@ -1,0 +1,4 @@
+
+Synthetic two-mode success: BC=0.506, steered=1.000
+{"stage": "warmup", "episode": 0, "steps": 3, "success": false, "return_sum": -3.0}
+{"stage": "online", "episode": 0, "steps": 3, "success": false, "return_sum": -3.0, "training_env_steps": 6}

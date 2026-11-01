@@ -1,0 +1,9 @@
+test_bc_gradient_and_offpolicy_updates (test_numerics.Numerics) ... ok
+test_bounded_flow_avoids_ood_action_saturation (test_numerics.Numerics) ... ok
+test_gaussian_density_convergence_entropy_and_trace (test_numerics.Numerics) ... ok
+test_hybrid_probability_and_invalid_commands (test_numerics.Numerics) ... ok
+
+----------------------------------------------------------------------
+Ran 4 tests in 14.129s
+
+OK

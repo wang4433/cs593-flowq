@@ -1,0 +1,50 @@
+== unit tests
+== reference masks and data audit
+{
+  "data": "/home/ldodeja_theaiinstitute_com/wsrl/robomimic/robomimic/../datasets/lift/ph/low_dim_v141.hdf5",
+  "num_data_workers": 0,
+  "hdf5_cache_mode": "all",
+  "hdf5_use_swmr": true,
+  "hdf5_load_next_obs": false,
+  "hdf5_normalize_obs": false,
+  "hdf5_filter_key": "20_percent_train",
+  "hdf5_validation_filter_key": "20_percent_valid",
+  "dataset_keys": [
+    "actions",
+    "rewards",
+    "dones"
+  ]
+}
+{
+  "data": "/home/ldodeja_theaiinstitute_com/robomimic_dataset/datasets/can/ph/low_dim_v141.hdf5",
+  "num_data_workers": 0,
+  "hdf5_cache_mode": "all",
+  "hdf5_use_swmr": true,
+  "hdf5_load_next_obs": false,
+  "hdf5_normalize_obs": false,
+  "hdf5_filter_key": "train",
+  "hdf5_validation_filter_key": "valid",
+  "dataset_keys": [
+    "actions",
+    "rewards",
+    "dones"
+  ]
+}
+{
+  "data": "/home/ldodeja_theaiinstitute_com/wsrl/robomimic/robomimic/../datasets/square/ph/low_dim_v141.hdf5",
+  "num_data_workers": 0,
+  "hdf5_cache_mode": "all",
+  "hdf5_use_swmr": true,
+  "hdf5_load_next_obs": false,
+  "hdf5_normalize_obs": false,
+  "hdf5_filter_key": "train",
+  "hdf5_validation_filter_key": "valid",
+  "dataset_keys": [
+    "actions",
+    "rewards",
+    "dones"
+  ]
+}
+== synthetic oracle + stage-1 BC training (parallel)
+== held-out demo diagnostics + closed-loop rollouts (parallel)
+== done: runs/verify_flow_12036366

@@ -1,0 +1,17 @@
+test_actor_starts_at_bc_prior_and_unbounded_replay (test_dsrl.DSRLTests) ... ok
+test_gripper_expectation_and_terminal_mask (test_dsrl.DSRLTests) ... ok
+test_noise_distillation_steers_two_modes_from_action_only_data (test_dsrl.DSRLTests) ... ok
+test_runner_roundtrip_offline_replay_and_evaluation_rng (test_dsrl.DSRLTests) ... ok
+test_td_target_nonterminal_and_update_isolation (test_dsrl.DSRLTests) ... ok
+test_invalid_inputs_and_extreme_latents_fail_explicitly (test_flow_interfaces.FlowInterfaces) ... ok
+test_roundtrip_and_frozen_inference (test_flow_interfaces.FlowInterfaces) ... ok
+test_sample_preserves_legacy_rng_and_actions (test_flow_interfaces.FlowInterfaces) ... ok
+test_bc_gradient_and_offpolicy_updates (test_numerics.Numerics) ... ok
+test_bounded_flow_avoids_ood_action_saturation (test_numerics.Numerics) ... ok
+test_gaussian_density_convergence_entropy_and_trace (test_numerics.Numerics) ... ok
+test_hybrid_probability_and_invalid_commands (test_numerics.Numerics) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 59.590s
+
+OK
