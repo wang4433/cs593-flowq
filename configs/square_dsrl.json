@@ -8,17 +8,19 @@
     "lr": 0.0003,
     "tau": 0.005,
     "grad_clip": 10.0,
-    "kl_beta": 0.1,
+    "kl_beta": 3.0,
     "prior_fraction": 0.5,
     "flow_steps": 16,
-    "replay_capacity": 100000,
-    "warmup_episodes": 10,
+    "replay_capacity": 200000,
+    "warmup_episodes": 100,
     "critic_warmup_updates": 500,
     "pretrain_updates": 1000,
-    "online_steps": 10000,
-    "utd": 1,
+    "online_steps": 100000,
+    "utd": 20,
     "eval_episodes": 50,
-    "eval_interval": 5000,
-    "log_stride": 10
+    "eval_interval": 10000,
+    "log_stride": 100,
+    "actor_mean_bound": 2.0,
+    "train_flow_steps": 8
   }
 }

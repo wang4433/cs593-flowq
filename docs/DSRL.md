@@ -69,6 +69,20 @@ six-dimensional arm decoder, and `p(g|s)` the frozen categorical gripper.
    regularized policy improvement using a reward critic, not a full soft-SAC
    Bellman objective. `kl_beta=0` removes the prior penalty.
 
+   New actors use `mu = actor_mean_bound*tanh(raw_mu)` (default bound 2) and
+   `sigma = exp(clamp(raw_log_std, -5, 0))`, capping std at 1. The Gaussian
+   samples themselves are still unbounded; no sample clipping is introduced.
+   These bounds complement KL regularization rather than replacing it.
+
+Critic targets and noise-critic distillation use `train_flow_steps=8` RK4 steps;
+executed actions in warmup, online interaction, and evaluation use
+`flow_steps=16`. This halves the number of velocity evaluations in each training
+decode, not necessarily total update time. It introduces a numerical mismatch
+between the teacher's decoder and the executed decoder. Prior held-out checks
+found roughly 1e-3 or smaller maximum action errors at 8 steps versus 64; that
+is not a uniform guarantee over future learned noise or encountered states.
+Use `--train-flow-steps 16` to remove the step-count mismatch in an ablation.
+
 **Aliasing qualification:** an ideal well-posed ODE followed by tanh is injective
 in the arm noise. Distinct latent points need not have exactly identical actions.
 The action-to-noise distillation is still applicable and may share value
@@ -98,15 +112,40 @@ file, preserving preprocessing and the original training masks. Run commands
 from the repository root. DSRL settings are in a separate `dsrl` section;
 old A/B/C settings do not control the new training loop.
 
-Defaults are **pilot settings**, not tuned hyperparameters: 10 BC warmup episodes,
-500 critic-only updates, 1,000 updates including the latent actor, and 10,000
-online steps. Each online step adds one executed action transition and performs
-one update. Warmup interactions count toward the reported training budget;
-evaluation interactions are reported separately. Evaluation runs at 5,000 and
-10,000 online steps, with 50 episodes for **each** of BC and DSRL per evaluation.
+Defaults are **experiment starting settings**, not tuned hyperparameters:
+100 BC warmup episodes, 500 critic-only updates, 1,000 updates including the
+latent actor, and 100,000 online steps. Each online step adds one executed
+transition and performs **20 updates**, for 2,001,500 learner updates overall.
+The actor mean bound is 2 and `kl_beta=3`. Replay capacity is 200,000, sufficient
+to retain all new transitions for these defaults on all three tasks.
+
+Warmup interactions count toward the reported training budget; evaluation
+interactions are separate. Evaluation runs every 10,000 online steps, with
+50 episodes for **each** of BC and DSRL. More warmup increases the opportunity
+to observe successes, but does not guarantee any particular number. Inspect
+`warmup.json` for the actual success count and positive-reward transitions.
+Logs include actor mean/std ranges, KL, and update duration; `summary.json`
+includes total and mean learner update time for estimating larger-run cost.
 
 The old `total_steps` field belongs to the A/B/C runner; DSRL's maximum training
 interaction count is `warmup_episodes*horizon + online_steps`.
+
+Sweep KL while holding the training seed and other settings fixed (these are
+full experiments, not smoke checks):
+
+```bash
+for beta in 1 3 10; do
+  $PY -m flowq.dsrl_runner train \
+    --config configs/square_dsrl.json \
+    --flow runs/verify_flow_12036366/square/bc/flow.pt \
+    --kl-beta "$beta" --seed 0 \
+    --out "runs/square_dsrl_beta${beta}_seed0"
+done
+```
+
+The resolved CLI settings are saved in each run's config and checkpoint.
+Repeat comparisons with additional training seeds before drawing conclusions.
+No full sweep or expanded-budget training was launched as part of this fix.
 
 For a bounded implementation smoke check (not a performance experiment):
 
@@ -116,12 +155,16 @@ $PY -m flowq.dsrl_runner train \
   --flow runs/verify_flow_12036366/lift/bc/flow.pt \
   --out runs/my_dsrl_smoke \
   --warmup-episodes 1 --online-steps 4 \
-  --critic-warmup-updates 2 --pretrain-updates 2 --eval-episodes 1
+  --critic-warmup-updates 2 --pretrain-updates 2 --eval-episodes 1 --utd 1
 ```
 
 Outputs include `config.json`, `updates.jsonl`, `evaluations.json`, `summary.json`,
 `dsrl.pt`, and `replay.npz`. The checkpoint contains the actor, both critics,
 target critic, optimizers, update count, configuration, and frozen BC identity.
+New checkpoints use schema `flowq.dsrl.v2`. The loader also supports old v1
+checkpoints, retaining their original unbounded mean and std cap of e rather
+than silently changing their policy. Existing v1 results are historical results
+for that old parameterization; retraining is required to assess the bounded actor.
 It supports reload/evaluation; exact interrupted-run continuation (environment,
 replay/RNG restoration) is not implemented. Intermediate checkpoints are saved
 at evaluations. Existing output directories are rejected.
@@ -202,6 +245,17 @@ on 8 recorded states per task converged as integration increased from 16 to 64
 steps; the largest 64-step round-trip error was below 2e-7. See the compact
 [check record](../results/dsrl_implementation_checks.json) and local artifacts
 under `runs/dsrl_smoke_20261101/`.
+
+After the bounded-actor/budget update, all **15 tests** passed, including actor
+bounds/gradients, analytic KL, separate training/execution integration counts,
+multi-update accounting, and legacy checkpoint behavior. The existing synthetic
+regression test (its small KL weight is 0.03, not the new experiment default)
+scored 0.506 for BC and 0.989 for the bounded actor. A local CPU microbenchmark
+on 128 Lift replay samples measured median update times of 61.5 ms at 16 steps
+and 34.7 ms at 8 steps (1.77x); maximum action difference was 0.00108 for sampled
+prior noise. These timings are not a controlled hardware benchmark or an error
+bound. See [stability checks](../results/dsrl_stability_checks.json). The larger
+robotics budgets and KL sweep have not yet been run.
 
 ## Follow-on: learned context and multimodal noise
 

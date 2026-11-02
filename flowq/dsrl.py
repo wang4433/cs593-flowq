@@ -10,6 +10,7 @@ mixture distillation. See docs/DSRL.md for objectives and conventions.
 """
 import copy
 import json
+import math
 
 import numpy as np
 import torch
@@ -26,9 +27,17 @@ def state_features(flow, states):
 
 
 class LatentActor(nn.Module):
-    """Unbounded diagonal Gaussian, initialized to exactly the BC noise prior."""
-    def __init__(self, obs_dim, latent_dim=6, hidden=128):
+    """Gaussian with bounded mean/std; samples themselves remain unbounded.
+
+    mean_bound=None is reserved for loading legacy v1 checkpoints.
+    """
+    def __init__(self, obs_dim, latent_dim=6, hidden=128, mean_bound=2., std_max=1.):
         super().__init__()
+        if mean_bound is not None and (not math.isfinite(mean_bound) or mean_bound <= 0):
+            raise ValueError('Actor mean bound must be finite and positive')
+        if not math.isfinite(std_max) or std_max < 1:
+            raise ValueError('Std cap must include the initial unit-Gaussian prior')
+        self.mean_bound, self.std_max = mean_bound, std_max
         self.latent_dim = latent_dim
         self.net = mlp(obs_dim, 2*latent_dim, hidden)
         nn.init.zeros_(self.net[-1].weight)
@@ -36,7 +45,9 @@ class LatentActor(nn.Module):
 
     def distribution(self, states):
         mean, log_std = self.net(states).chunk(2, -1)
-        return torch.distributions.Normal(mean, log_std.clamp(-5, 1).exp())
+        if self.mean_bound is not None:
+            mean = self.mean_bound*torch.tanh(mean)
+        return torch.distributions.Normal(mean, log_std.clamp(-5, math.log(self.std_max)).exp())
 
     def sample(self, states, generator=None, deterministic=False):
         dist = self.distribution(states)
@@ -129,13 +140,15 @@ class ActionReplay:
 
 
 class DSRLLearner:
-    def __init__(self, flow, cfg):
+    def __init__(self, flow, cfg, legacy_actor=False):
         if (not flow.hybrid or flow.continuous_dim != 6 or flow.action_dim != 7
                 or flow.training or any(p.requires_grad for p in flow.parameters())):
             raise ValueError('DSRL requires a frozen, evaluation-mode 6D arm + gripper flow')
         self.flow, self.cfg = flow, cfg
         n = flow.obs_dim+1
-        self.actor = LatentActor(n, 6, cfg['hidden'])
+        self.actor = LatentActor(n, 6, cfg['hidden'],
+                                mean_bound=None if legacy_actor else cfg.get('actor_mean_bound', 2.),
+                                std_max=math.e if legacy_actor else 1.)
         self.action_critic = Critic(n, 7, cfg['hidden'])
         self.noise_critic = Critic(n, 6, cfg['hidden'])
         self.target = copy.deepcopy(self.action_critic).requires_grad_(False)
@@ -147,7 +160,7 @@ class DSRLLearner:
     @torch.no_grad()
     def decoded_value(self, critic, states, z):
         """E_gripper[min_i QA_i(s, (decode(s,z), gripper))]."""
-        arm = self.flow.decode(states, z, steps=self.cfg['flow_steps'])
+        arm = self.flow.decode(states, z, steps=self.cfg.get('train_flow_steps', self.cfg['flow_steps']))
         probs = self.flow.gripper_dist(states).probs
         grip = torch.arange(-1, 2, dtype=states.dtype, device=states.device)
         actions = torch.cat([arm[:, None, :].expand(-1, 3, -1),
@@ -208,10 +221,13 @@ class DSRLLearner:
             for target_p, p in zip(self.target.parameters(), self.action_critic.parameters()):
                 target_p.lerp_(p, self.cfg['tau'])
             kl = self.actor.kl(x).mean().item()
+            dist = self.actor.distribution(x)
         self.updates += 1
         return dict(action_critic_loss=action_loss.item(), noise_critic_loss=noise_loss.item(),
                     actor_loss=None if actor_loss is None else actor_loss.item(),
                     latent_kl=kl, teacher_mean=teacher.mean().item(),
+                    latent_mean_abs_max=dist.mean.abs().max().item(),
+                    latent_std_min=dist.scale.min().item(), latent_std_max=dist.scale.max().item(),
                     td_target_mean=target.mean().item())
 
     def state_dict(self):

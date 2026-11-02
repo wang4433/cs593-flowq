@@ -1,0 +1,29 @@
+{
+  "scope": "CPU float64, Lift checkpoint, 128 replay transitions sampled with repetition, one process/thread; local timing only",
+  "action_error_8_vs_16_max": 0.0010823984704583373,
+  "action_error_8_vs_16_mean": 0.00014208904107415303,
+  "16": {
+    "median_update_seconds": 0.061488551495131105,
+    "mean_update_seconds": 0.08976946879411116,
+    "measured_updates": 10,
+    "final_latent_kl": 1.9180236048789608e-05,
+    "final_latent_mean_abs_max": 0.007901843846765738,
+    "final_latent_std_max": 1.0
+  },
+  "8": {
+    "median_update_seconds": 0.03470466349972412,
+    "mean_update_seconds": 0.06733427657745779,
+    "measured_updates": 10,
+    "final_latent_kl": 1.9178993020926675e-05,
+    "final_latent_mean_abs_max": 0.007901684472851207,
+    "final_latent_std_max": 1.0
+  },
+  "update_speedup_16_over_8": 1.7717662496747706,
+  "test_count": 15,
+  "tests_passed": 15,
+  "synthetic_bc_rewarded_mode_fraction": 0.506,
+  "synthetic_bounded_actor_rewarded_mode_fraction": 0.989,
+  "synthetic_scope": "Original two-state terminal-bandit regression test at kl_beta=0.03; not the production KL sweep",
+  "expanded_training_launched": false,
+  "kl_sweep_launched": false
+}

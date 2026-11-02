@@ -42,6 +42,12 @@ def validate_config(cfg):
     for key in positive + nonnegative:
         if type(d[key]) is not int or d[key] < (1 if key in positive else 0):
             raise ValueError(f'Invalid DSRL setting: {key}')
+    train_steps = d.get('train_flow_steps', d['flow_steps'])
+    if type(train_steps) is not int or train_steps < 1:
+        raise ValueError('train_flow_steps must be a positive integer')
+    bound = d.get('actor_mean_bound', 2.)
+    if not math.isfinite(bound) or bound <= 0:
+        raise ValueError('actor_mean_bound must be finite and positive')
     for key in ('lr', 'grad_clip', 'kl_beta', 'prior_fraction', 'tau'):
         if not math.isfinite(d[key]):
             raise ValueError(f'Nonfinite DSRL setting: {key}')
@@ -130,21 +136,22 @@ def evaluate_pair(cfg, flow, learner, metadata, env_factory=Task, mean_noise=Fal
 
 
 def save_checkpoint(path, cfg, flow_path, flow, learner, training_steps):
-    torch.save(dict(schema='flowq.dsrl.v1', config=cfg, flow_sha256=sha256(flow_path),
+    torch.save(dict(schema='flowq.dsrl.v2', config=cfg, flow_sha256=sha256(flow_path),
                     flow_fingerprint=fingerprint(flow), learner=learner.state_dict(),
                     training_env_steps=training_steps), path)
 
 
 def load_checkpoint(path, flow_path):
     ck = torch.load(path, map_location='cpu', weights_only=False)
-    if ck.get('schema') != 'flowq.dsrl.v1' or ck['flow_sha256'] != sha256(flow_path):
+    if ck.get('schema') not in ('flowq.dsrl.v1', 'flowq.dsrl.v2') or ck['flow_sha256'] != sha256(flow_path):
         raise ValueError('DSRL checkpoint schema or frozen flow identity mismatch')
     cfg = ck['config']
     validate_config(cfg)
     flow, bc = load_flow(flow_path, cfg)
     if ck['flow_fingerprint'] != fingerprint(flow):
         raise ValueError('Frozen model fingerprint mismatch')
-    learner = DSRLLearner(flow, learner_config(cfg))
+    # A tanh mean applied to old weights would silently change the old policy.
+    learner = DSRLLearner(flow, learner_config(cfg), legacy_actor=ck['schema'] == 'flowq.dsrl.v1')
     learner.load_state_dict(ck['learner'])
     return cfg, flow, bc, learner
 
@@ -172,6 +179,7 @@ def train(cfg, flow_path, out, replay_path=None, env_factory=Task):
     noise_rng = torch.Generator().manual_seed(d['seed']+100)
     warmup_steps, online_steps, evaluation_steps = 0, 0, 0
     episodes, evaluations = [], []
+    update_seconds = 0.
     env = None
     try:
         if d['warmup_episodes'] or d['online_steps']:
@@ -188,12 +196,23 @@ def train(cfg, flow_path, out, replay_path=None, env_factory=Task):
             episodes.append(row)
             print(json.dumps(row), flush=True)
 
+        warmup = [e for e in episodes if e['stage'] == 'warmup']
+        write_json(out/'warmup.json', dict(episodes=len(warmup),
+            successes=sum(e['success'] for e in warmup), environment_steps=warmup_steps,
+            retained_positive_reward_transitions=sum(row[2] > 0 for row in replay.rows),
+            imported_transitions=imported))
+
         with (out/'updates.jsonl').open('w') as log:
             def update(train_actor, stage):
+                nonlocal update_seconds
+                tick = time.perf_counter()
                 metrics = learner.update(replay.batch(d['batch_size']), train_actor=train_actor)
+                elapsed = time.perf_counter()-tick
+                update_seconds += elapsed
                 if learner.updates % d['log_stride'] == 0 or learner.updates == 1:
                     log.write(json.dumps(dict(stage=stage, update=learner.updates,
-                        training_env_steps=warmup_steps+online_steps, **metrics), allow_nan=False)+'\n')
+                        training_env_steps=warmup_steps+online_steps, update_seconds=elapsed,
+                        **metrics), allow_nan=False)+'\n')
                     log.flush()
 
             for _ in range(d['critic_warmup_updates']):
@@ -246,6 +265,8 @@ def train(cfg, flow_path, out, replay_path=None, env_factory=Task):
         training_env_steps=warmup_steps+online_steps, evaluation_env_steps=evaluation_steps,
         all_simulator_steps=warmup_steps+online_steps+evaluation_steps,
         partial_online_episode_steps=n, updates=learner.updates,
+        learner_update_seconds=update_seconds,
+        mean_update_seconds=update_seconds/max(learner.updates, 1),
         episodes=episodes, evaluations=evaluations, seconds=time.perf_counter()-start)
     write_json(out/'summary.json', report)
     return report
@@ -259,8 +280,12 @@ def main():
     train_p.add_argument('--flow', required=True)
     train_p.add_argument('--out', required=True)
     train_p.add_argument('--replay', help='Training replay.npz; action transitions need no noise labels')
-    for name in ('warmup-episodes', 'online-steps', 'critic-warmup-updates', 'pretrain-updates', 'eval-episodes'):
+    integer_overrides = ('warmup-episodes', 'online-steps', 'critic-warmup-updates',
+                         'pretrain-updates', 'eval-episodes', 'utd', 'train-flow-steps', 'seed')
+    for name in integer_overrides:
         train_p.add_argument('--'+name, type=int)
+    train_p.add_argument('--kl-beta', type=float, help='Prior KL weight; suggested sweep: 1, 3, 10')
+    train_p.add_argument('--actor-mean-bound', type=float, help='Mean = bound*tanh(raw_mean); default 2')
     eval_p = sub.add_parser('eval', help='Compare a saved latent actor against its exact BC checkpoint')
     eval_p.add_argument('--checkpoint', required=True)
     eval_p.add_argument('--flow', required=True)
@@ -271,7 +296,7 @@ def main():
     args = parser.parse_args()
     if args.command == 'train':
         cfg = load_config(args.config)
-        for name in ('warmup_episodes', 'online_steps', 'critic_warmup_updates', 'pretrain_updates', 'eval_episodes'):
+        for name in tuple(n.replace('-', '_') for n in integer_overrides)+('kl_beta', 'actor_mean_bound'):
             value = getattr(args, name)
             if value is not None:
                 cfg['dsrl'][name] = value

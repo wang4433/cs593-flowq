@@ -4,13 +4,14 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 import numpy as np
 import torch
 from torch import nn
 
 from flowq.dsrl import ActionReplay, DSRLLearner, LatentActor, state_features
-from flowq.dsrl_runner import evaluate_pair, load_checkpoint, replay_contract, train
+from flowq.dsrl_runner import act, evaluate_pair, load_checkpoint, load_config, train, validate_config
 from flowq.flow import DTYPE, Flow, fingerprint, freeze, tensor
 
 
@@ -61,6 +62,50 @@ class DSRLTests(unittest.TestCase):
         torch.manual_seed(7)
         np.random.seed(7)
         self.flow = freeze(Flow(3, hidden=16, max_velocity=6.))
+
+    def test_actor_bounds_kl_and_gradients(self):
+        actor = LatentActor(4, hidden=16, mean_bound=1.5)
+        s = torch.ones(3, 4, dtype=DTYPE)
+        with torch.no_grad():
+            actor.net[-1].bias[:6].copy_(tensor([-100, -2, -.5, .5, 2, 100]))
+            actor.net[-1].bias[6:].copy_(tensor([-100, -2, -.5, .5, 2, 100]))
+        dist = actor.distribution(s)
+        self.assertLessEqual(dist.mean.abs().max().item(), 1.5)
+        self.assertLessEqual(dist.scale.max().item(), 1.)
+        self.assertGreater(dist.scale.min().item(), 0.)
+        prior = torch.distributions.Normal(torch.zeros_like(dist.mean), torch.ones_like(dist.scale))
+        torch.testing.assert_close(actor.kl(s), torch.distributions.kl_divergence(dist, prior).sum(-1))
+        actor.sample(s).sum().backward()
+        grad = actor.net[-1].bias.grad
+        self.assertTrue(torch.isfinite(grad).all())
+        self.assertGreater(grad[2].abs().item(), 0.)  # mean gradient through tanh
+        self.assertGreater(grad[8].abs().item(), 0.)  # std gradient inside cap
+
+    def test_training_decoder_steps_are_separate_from_execution(self):
+        cfg = dict(settings(), flow_steps=16, train_flow_steps=8)
+        learner = DSRLLearner(self.flow, cfg)
+        s = torch.zeros(4, 4, dtype=DTYPE)
+        with patch.object(self.flow, 'decode', wraps=self.flow.decode) as decode:
+            learner.update((s, torch.zeros(4, 7, dtype=DTYPE), torch.zeros(4, dtype=DTYPE),
+                            s, torch.zeros(4, dtype=DTYPE)))
+            self.assertEqual([c.kwargs['steps'] for c in decode.call_args_list], [8, 8])
+            act(self.flow, learner, np.zeros(4), torch.Generator().manual_seed(5), 16)
+            # action_from_noise passes steps positionally.
+            self.assertEqual(decode.call_args.args[2], 16)
+
+    def test_shipped_budgets_and_validation(self):
+        root = Path(__file__).resolve().parents[1]
+        for task in ('lift', 'can', 'square'):
+            cfg = load_config(root/f'configs/{task}_dsrl.json')
+            d = cfg['dsrl']
+            self.assertEqual((d['warmup_episodes'], d['online_steps'], d['utd']), (100, 100000, 20))
+            self.assertEqual((d['train_flow_steps'], d['flow_steps']), (8, 16))
+            for key, value in (('actor_mean_bound', float('nan')), ('actor_mean_bound', 0),
+                               ('train_flow_steps', 0), ('train_flow_steps', 1.5), ('kl_beta', -1)):
+                bad = copy.deepcopy(cfg)
+                bad['dsrl'][key] = value
+                with self.assertRaises(ValueError):
+                    validate_config(bad)
 
     def test_actor_starts_at_bc_prior_and_unbounded_replay(self):
         actor = LatentActor(4, hidden=16)
@@ -153,7 +198,8 @@ class DSRLTests(unittest.TestCase):
     def test_runner_roundtrip_offline_replay_and_evaluation_rng(self):
         d = dict(settings(), seed=0, eval_seed=40000, batch_size=8, replay_capacity=100,
                  warmup_episodes=1, critic_warmup_updates=1, pretrain_updates=1,
-                 online_steps=4, utd=1, eval_episodes=2, eval_interval=3, log_stride=1)
+                 online_steps=4, utd=3, eval_episodes=2, eval_interval=3, log_stride=1,
+                 actor_mean_bound=1.5, train_flow_steps=4)
         d.pop('gamma')
         cfg = dict(task='lift', gamma=.99, horizon=3, versions={}, reward_scale=5., reward_bias=-1.,
                    train_mask='train', valid_mask='valid', debug_demos=None, boundary_epsilon=.001,
@@ -165,10 +211,26 @@ class DSRLTests(unittest.TestCase):
                             obs_dim=3, hidden=16, flow=self.flow.state_dict(), manifest={'env': {}}), flow_path)
             report = train(cfg, flow_path, root/'online', env_factory=TinyTask)
             self.assertEqual(report['training_env_steps'], 7)
-            self.assertEqual(report['updates'], 6)
+            self.assertEqual(report['updates'], 14)
+            self.assertGreater(report['mean_update_seconds'], 0)
+            warmup = json.loads((root/'online/warmup.json').read_text())
+            self.assertEqual(warmup['successes'], 0)
             self.assertEqual(report['retained_replay_transitions'], 7)
             self.assertEqual(report['partial_online_episode_steps'], 1)
             loaded_cfg, flow, bc, learner = load_checkpoint(root/'online/dsrl.pt', flow_path)
+            self.assertEqual(learner.actor.mean_bound, 1.5)
+            self.assertEqual(learner.actor.std_max, 1.)
+            # v1 weights must still mean raw Gaussian means and std capped at e.
+            legacy = DSRLLearner(flow, settings(), legacy_actor=True)
+            with torch.no_grad():
+                legacy.actor.net[-1].bias.fill_(2.)
+            ck = torch.load(root/'online/dsrl.pt', weights_only=False)
+            ck.update(schema='flowq.dsrl.v1', learner=legacy.state_dict())
+            torch.save(ck, root/'legacy.pt')
+            _, _, _, old = load_checkpoint(root/'legacy.pt', flow_path)
+            x = torch.zeros(2, 4, dtype=DTYPE)
+            torch.testing.assert_close(old.actor.distribution(x).mean, legacy.actor.distribution(x).mean)
+            torch.testing.assert_close(old.actor.distribution(x).scale, legacy.actor.distribution(x).scale)
             np_before, torch_before = np.random.get_state(), torch.random.get_rng_state()
             first = evaluate_pair(loaded_cfg, flow, learner, {}, TinyTask)
             second = evaluate_pair(loaded_cfg, flow, learner, {}, TinyTask)
