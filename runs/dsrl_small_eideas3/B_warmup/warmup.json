@@ -1,0 +1,7 @@
+{
+  "episodes": 50,
+  "successes": 33,
+  "environment_steps": 8902,
+  "retained_positive_reward_transitions": 33,
+  "imported_transitions": 0
+}

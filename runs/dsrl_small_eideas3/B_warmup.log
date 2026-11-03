@@ -1,0 +1,54 @@
+{"stage": "start", "device": "cuda", "torch": "2.8.0+cu128", "gpu": "NVIDIA GeForce RTX 5080", "cuda": "12.8"}
+[robosuite WARNING] No private macro file found! (macros.py:53)
+[robosuite WARNING] It is recommended to use a private macro file (macros.py:54)
+[robosuite WARNING] To setup, run: python /home/kseelams/cs593-flowq/.venv/lib/python3.10/site-packages/robosuite/scripts/setup_macros.py (macros.py:55)
+{"stage": "warmup", "episode": 0, "steps": 108, "success": true, "return_sum": -103.0}
+{"stage": "warmup", "episode": 1, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 2, "steps": 87, "success": true, "return_sum": -82.0}
+{"stage": "warmup", "episode": 3, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 4, "steps": 116, "success": true, "return_sum": -111.0}
+{"stage": "warmup", "episode": 5, "steps": 97, "success": true, "return_sum": -92.0}
+{"stage": "warmup", "episode": 6, "steps": 104, "success": true, "return_sum": -99.0}
+{"stage": "warmup", "episode": 7, "steps": 114, "success": true, "return_sum": -109.0}
+{"stage": "warmup", "episode": 8, "steps": 129, "success": true, "return_sum": -124.0}
+{"stage": "warmup", "episode": 9, "steps": 132, "success": true, "return_sum": -127.0}
+{"stage": "warmup", "episode": 10, "steps": 116, "success": true, "return_sum": -111.0}
+{"stage": "warmup", "episode": 11, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 12, "steps": 106, "success": true, "return_sum": -101.0}
+{"stage": "warmup", "episode": 13, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 14, "steps": 131, "success": true, "return_sum": -126.0}
+{"stage": "warmup", "episode": 15, "steps": 112, "success": true, "return_sum": -107.0}
+{"stage": "warmup", "episode": 16, "steps": 111, "success": true, "return_sum": -106.0}
+{"stage": "warmup", "episode": 17, "steps": 127, "success": true, "return_sum": -122.0}
+{"stage": "warmup", "episode": 18, "steps": 120, "success": true, "return_sum": -115.0}
+{"stage": "warmup", "episode": 19, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 20, "steps": 131, "success": true, "return_sum": -126.0}
+{"stage": "warmup", "episode": 21, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 22, "steps": 108, "success": true, "return_sum": -103.0}
+{"stage": "warmup", "episode": 23, "steps": 112, "success": true, "return_sum": -107.0}
+{"stage": "warmup", "episode": 24, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 25, "steps": 127, "success": true, "return_sum": -122.0}
+{"stage": "warmup", "episode": 26, "steps": 110, "success": true, "return_sum": -105.0}
+{"stage": "warmup", "episode": 27, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 28, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 29, "steps": 110, "success": true, "return_sum": -105.0}
+{"stage": "warmup", "episode": 30, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 31, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 32, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 33, "steps": 99, "success": true, "return_sum": -94.0}
+{"stage": "warmup", "episode": 34, "steps": 125, "success": true, "return_sum": -120.0}
+{"stage": "warmup", "episode": 35, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 36, "steps": 107, "success": true, "return_sum": -102.0}
+{"stage": "warmup", "episode": 37, "steps": 107, "success": true, "return_sum": -102.0}
+{"stage": "warmup", "episode": 38, "steps": 111, "success": true, "return_sum": -106.0}
+{"stage": "warmup", "episode": 39, "steps": 128, "success": true, "return_sum": -123.0}
+{"stage": "warmup", "episode": 40, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 41, "steps": 144, "success": true, "return_sum": -139.0}
+{"stage": "warmup", "episode": 42, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 43, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 44, "steps": 300, "success": false, "return_sum": -300.0}
+{"stage": "warmup", "episode": 45, "steps": 113, "success": true, "return_sum": -108.0}
+{"stage": "warmup", "episode": 46, "steps": 111, "success": true, "return_sum": -106.0}
+{"stage": "warmup", "episode": 47, "steps": 130, "success": true, "return_sum": -125.0}
+{"stage": "warmup", "episode": 48, "steps": 96, "success": true, "return_sum": -91.0}
+{"stage": "warmup", "episode": 49, "steps": 123, "success": true, "return_sum": -118.0}

@@ -1,0 +1,34 @@
+{"stage": "start", "device": "cuda", "torch": "2.8.0+cu128", "gpu": "NVIDIA GeForce RTX 5080", "cuda": "12.8"}
+[robosuite WARNING] No private macro file found! (macros.py:53)
+[robosuite WARNING] It is recommended to use a private macro file (macros.py:54)
+[robosuite WARNING] To setup, run: python /home/kseelams/cs593-flowq/.venv/lib/python3.10/site-packages/robosuite/scripts/setup_macros.py (macros.py:55)
+{"stage": "online", "episode": 0, "steps": 119, "success": true, "return_sum": -114.0, "training_env_steps": 119}
+{"stage": "online", "episode": 1, "steps": 108, "success": true, "return_sum": -103.0, "training_env_steps": 227}
+{"stage": "online", "episode": 2, "steps": 131, "success": true, "return_sum": -126.0, "training_env_steps": 358}
+{"stage": "online", "episode": 3, "steps": 105, "success": true, "return_sum": -100.0, "training_env_steps": 463}
+{"stage": "online", "episode": 4, "steps": 111, "success": true, "return_sum": -106.0, "training_env_steps": 574}
+{"stage": "online", "episode": 5, "steps": 300, "success": false, "return_sum": -300.0, "training_env_steps": 874}
+{"stage": "online", "episode": 6, "steps": 131, "success": true, "return_sum": -126.0, "training_env_steps": 1005}
+{"stage": "online", "episode": 7, "steps": 111, "success": true, "return_sum": -106.0, "training_env_steps": 1116}
+{"stage": "online", "episode": 8, "steps": 128, "success": true, "return_sum": -123.0, "training_env_steps": 1244}
+{"stage": "online", "episode": 9, "steps": 119, "success": true, "return_sum": -114.0, "training_env_steps": 1363}
+{"stage": "online", "episode": 10, "steps": 106, "success": true, "return_sum": -101.0, "training_env_steps": 1469}
+{"stage": "online", "episode": 11, "steps": 101, "success": true, "return_sum": -96.0, "training_env_steps": 1570}
+{"stage": "online", "episode": 12, "steps": 102, "success": true, "return_sum": -97.0, "training_env_steps": 1672}
+{"stage": "online", "episode": 13, "steps": 300, "success": false, "return_sum": -300.0, "training_env_steps": 1972}
+{"stage": "online", "episode": 14, "steps": 300, "success": false, "return_sum": -300.0, "training_env_steps": 2272}
+{"stage": "online", "episode": 15, "steps": 103, "success": true, "return_sum": -98.0, "training_env_steps": 2375}
+{"stage": "online", "episode": 16, "steps": 144, "success": true, "return_sum": -139.0, "training_env_steps": 2519}
+{"stage": "online", "episode": 17, "steps": 300, "success": false, "return_sum": -300.0, "training_env_steps": 2819}
+{"stage": "online", "episode": 18, "steps": 92, "success": true, "return_sum": -87.0, "training_env_steps": 2911}
+{"stage": "online", "episode": 19, "steps": 122, "success": true, "return_sum": -117.0, "training_env_steps": 3033}
+{"stage": "online", "episode": 20, "steps": 129, "success": true, "return_sum": -124.0, "training_env_steps": 3162}
+{"stage": "online", "episode": 21, "steps": 111, "success": true, "return_sum": -106.0, "training_env_steps": 3273}
+{"stage": "online", "episode": 22, "steps": 300, "success": false, "return_sum": -300.0, "training_env_steps": 3573}
+{"stage": "online", "episode": 23, "steps": 103, "success": true, "return_sum": -98.0, "training_env_steps": 3676}
+{"stage": "online", "episode": 24, "steps": 300, "success": false, "return_sum": -300.0, "training_env_steps": 3976}
+{"stage": "online", "episode": 25, "steps": 122, "success": true, "return_sum": -117.0, "training_env_steps": 4098}
+{"stage": "online", "episode": 26, "steps": 115, "success": true, "return_sum": -110.0, "training_env_steps": 4213}
+{"stage": "online", "episode": 27, "steps": 117, "success": true, "return_sum": -112.0, "training_env_steps": 4330}
+{"stage": "online", "episode": 28, "steps": 300, "success": false, "return_sum": -300.0, "training_env_steps": 4630}
+{"stage": "online", "episode": 29, "steps": 300, "success": false, "return_sum": -300.0, "training_env_steps": 4930}

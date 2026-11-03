@@ -1,0 +1,6 @@
+{
+  "device": "cuda",
+  "torch": "2.8.0+cu128",
+  "gpu": "NVIDIA GeForce RTX 5080",
+  "cuda": "12.8"
+}

@@ -1,0 +1,16 @@
+.{"stage": "start", "device": "cuda", "torch": "2.8.0+cu128", "gpu": "NVIDIA GeForce RTX 5080", "cuda": "12.8"}
+{"stage": "warmup", "episode": 0, "steps": 3, "success": false, "return_sum": -3.0}
+{"stage": "online", "episode": 0, "steps": 3, "success": false, "return_sum": -3.0, "training_env_steps": 6}
+/home/kseelams/cs593-flowq/.venv/lib/python3.10/site-packages/torch/random.py:187: UserWarning: CUDA reports that you have 2 available devices, and you have used fork_rng without explicitly specifying which devices are being used. For safety, we initialize *every* CUDA device by default, which can be quite slow if you have a lot of CUDAs. If you know that you are only making use of a few CUDA devices, set the environment variable CUDA_VISIBLE_DEVICES or the 'devices' keyword argument of fork_rng with the set of devices you are actually using. For example, if you are using CPU only, set device.upper()_VISIBLE_DEVICES= or devices=[]; if you are using device 0 only, set CUDA_VISIBLE_DEVICES=0 or devices=[0].  To initialize all devices and suppress this warning, set the 'devices' keyword argument to `range(torch.cuda.device_count())`.
+  warnings.warn(message)
+.....
+Synthetic two-mode success: BC=0.506, steered=0.993
+{"stage": "start", "device": "cpu", "torch": "2.8.0+cu128"}
+{"stage": "warmup", "episode": 0, "steps": 3, "success": false, "return_sum": -3.0}
+{"stage": "online", "episode": 0, "steps": 3, "success": false, "return_sum": -3.0, "training_env_steps": 6}
+{"stage": "start", "device": "cpu", "torch": "2.8.0+cu128"}
+...........
+----------------------------------------------------------------------
+Ran 17 tests in 11.314s
+
+OK

@@ -1,0 +1,1 @@
+{"stage": "critic_warmup", "update": 1, "training_env_steps": 8902, "update_seconds": 0.2044123080559075, "action_critic_loss": 1.529457026791769, "noise_critic_loss": 0.0852174791634476, "actor_loss": null, "latent_kl": 0.0, "teacher_mean": -0.08115030935072542, "latent_mean_abs_max": 0.0, "latent_std_min": 1.0, "latent_std_max": 1.0, "td_target_mean": -0.9342453761940948}
