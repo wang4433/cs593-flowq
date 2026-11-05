@@ -1,0 +1,12 @@
+# GPU stack for DSRL learner updates (float64 on CUDA). RTX 50xx (Blackwell,
+# sm_120) needs a CUDA 12.8+ torch build; the CPU lock's torch 2.5.1 cannot use it.
+# Everything except torch matches requirements.lock.txt / requirements.txt.
+--extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.8.0
+numpy==1.26.4
+h5py==3.16.0
+robosuite==1.4.1
+mujoco==3.2.6
+numba==0.61.2
+llvmlite==0.44.0
+scipy==1.15.3
