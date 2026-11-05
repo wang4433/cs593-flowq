@@ -255,5 +255,64 @@ class DSRLTests(unittest.TestCase):
                 train(cfg, flow_path, root/'online', env_factory=TinyTask)
 
 
+@unittest.skipUnless(torch.cuda.is_available(), 'CUDA not available')
+class DSRLCudaTests(unittest.TestCase):
+    """GPU path: same CPU noise streams, networks on CUDA, runner roundtrip."""
+    def setUp(self):
+        torch.manual_seed(7)
+        np.random.seed(7)
+        self.flow = freeze(Flow(3, hidden=16, max_velocity=6.))
+
+    def test_cuda_matches_cpu_and_trains(self):
+        cuda_flow = copy.deepcopy(self.flow).cuda()
+        cpu_learner = DSRLLearner(self.flow, settings())
+        gpu_learner = DSRLLearner(cuda_flow, settings())
+        gpu_learner.load_state_dict(cpu_learner.state_dict())
+        self.assertTrue(all(p.is_cuda for p in gpu_learner.actor.parameters()))
+        state = np.array([.1, -.2, .3, .5])
+        for baseline in (True, False):
+            a_cpu, z_cpu = act(self.flow, cpu_learner, state, torch.Generator().manual_seed(3), 8, baseline)
+            a_gpu, z_gpu = act(cuda_flow, gpu_learner, state, torch.Generator().manual_seed(3), 8, baseline)
+            np.testing.assert_allclose(z_gpu, z_cpu, rtol=0, atol=1e-12)
+            np.testing.assert_allclose(a_gpu, a_cpu, rtol=0, atol=1e-10)
+        replay = ActionReplay(4)
+        for i in range(20):
+            replay.add(np.full(4, .1*i), np.zeros(7), i % 2, np.zeros(4), i % 3 == 0)
+        before = fingerprint(cuda_flow)
+        for i in range(5):
+            metrics = gpu_learner.update(replay.batch(16), train_actor=i > 1)
+        self.assertTrue(all(math_finite(v) for v in metrics.values() if v is not None))
+        self.assertEqual(before, fingerprint(cuda_flow))
+
+    def test_cuda_runner_roundtrip(self):
+        d = dict(settings(), seed=0, eval_seed=40000, batch_size=8, replay_capacity=100,
+                 warmup_episodes=1, critic_warmup_updates=1, pretrain_updates=1,
+                 online_steps=4, utd=3, eval_episodes=2, eval_interval=3, log_stride=1,
+                 actor_mean_bound=1.5, train_flow_steps=4)
+        d.pop('gamma')
+        cfg = dict(task='lift', gamma=.99, horizon=3, versions={}, reward_scale=5., reward_bias=-1.,
+                   train_mask='train', valid_mask='valid', debug_demos=None, boundary_epsilon=.001,
+                   flow_max_velocity=6., dsrl=d)
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            flow_path = root/'flow.pt'
+            torch.save(dict(trained_on_original_demonstrations=True, task='lift', config=cfg,
+                            obs_dim=3, hidden=16, flow=self.flow.state_dict(), manifest={'env': {}}), flow_path)
+            report = train(cfg, flow_path, root/'online', env_factory=TinyTask, device='cuda')
+            self.assertEqual(report['updates'], 14)
+            self.assertTrue(report['compute']['device'].startswith('cuda'))
+            loaded_cfg, flow, _, learner = load_checkpoint(root/'online/dsrl.pt', flow_path, 'cuda')
+            self.assertTrue(flow.mean.is_cuda and next(learner.actor.parameters()).is_cuda)
+            fresh = DSRLLearner(flow, settings())
+            paired = evaluate_pair(loaded_cfg, flow, fresh, {}, TinyTask)
+            self.assertEqual(paired['bc'], paired['dsrl'])
+            # A CUDA checkpoint still loads on CPU.
+            load_checkpoint(root/'online/dsrl.pt', flow_path, 'cpu')
+
+
+def math_finite(v):
+    return np.isfinite(v)
+
+
 if __name__ == '__main__':
     unittest.main()

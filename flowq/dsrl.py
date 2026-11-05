@@ -16,7 +16,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from .flow import DTYPE, finite, mlp, tensor
+from .flow import DTYPE, finite, generator_device, mlp, tensor
 from .rl import Critic
 
 
@@ -53,9 +53,9 @@ class LatentActor(nn.Module):
         dist = self.distribution(states)
         if deterministic:
             return dist.mean
-        eps = torch.randn(dist.mean.shape, dtype=states.dtype, device=states.device,
-                          generator=generator)
-        return dist.mean + dist.scale*eps
+        eps = torch.randn(dist.mean.shape, dtype=states.dtype,
+                          device=generator_device(generator, states.device), generator=generator)
+        return dist.mean + dist.scale*eps.to(states.device)
 
     def kl(self, states):
         dist = self.distribution(states)
@@ -145,12 +145,14 @@ class DSRLLearner:
                 or flow.training or any(p.requires_grad for p in flow.parameters())):
             raise ValueError('DSRL requires a frozen, evaluation-mode 6D arm + gripper flow')
         self.flow, self.cfg = flow, cfg
+        # Learner networks live wherever the frozen flow was placed (CPU or CUDA).
+        self.device = flow.mean.device
         n = flow.obs_dim+1
         self.actor = LatentActor(n, 6, cfg['hidden'],
                                 mean_bound=None if legacy_actor else cfg.get('actor_mean_bound', 2.),
-                                std_max=math.e if legacy_actor else 1.)
-        self.action_critic = Critic(n, 7, cfg['hidden'])
-        self.noise_critic = Critic(n, 6, cfg['hidden'])
+                                std_max=math.e if legacy_actor else 1.).to(self.device)
+        self.action_critic = Critic(n, 7, cfg['hidden']).to(self.device)
+        self.noise_critic = Critic(n, 6, cfg['hidden']).to(self.device)
         self.target = copy.deepcopy(self.action_critic).requires_grad_(False)
         self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=cfg['lr'])
         self.action_opt = torch.optim.Adam(self.action_critic.parameters(), lr=cfg['lr'])
@@ -191,7 +193,8 @@ class DSRLLearner:
         optimizer.step()
 
     def update(self, batch, train_actor=True):
-        states, actions, rewards, next_states, terminals = batch
+        states, actions, rewards, next_states, terminals = (
+            v.to(self.device, non_blocking=True) for v in batch)
         x = state_features(self.flow, states)
         target = self.td_target(rewards, next_states, terminals)
         action_loss = (self.action_critic(x, actions)-target).square().mean()

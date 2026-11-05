@@ -1,0 +1,62 @@
+% ============================================================================
+% Edits to other sections of cs59300_midterm, so they match the repo and the new Section 5.
+% Each block: where it goes, the OLD text, and the NEW text to paste instead.
+% ============================================================================
+
+% ---------------------------------------------------------------------------
+% (1) Abstract, last two sentences.
+% OLD: "We develop the policy and gating implementation and design a controlled
+%       study on Robomimic Lift, Can, and Square. The planned evaluation examines
+%       action-value calibration, online sample efficiency, and computation cost,
+%       with a shared-critic gate isolating the effect of the proposed scoring rule."
+% NEW:
+We implement the policy and gating pipeline and design a controlled study on
+Robomimic Lift, Can, and Square. Frozen Flow BC reaches 60\%, 60\% and 15\%
+success on the three tasks. In single-seed full-budget runs, steering the frozen
+flow through its input noise raises success from 46\% to 92\% on Lift and from
+52\% to 88\% on Can, measured against BC on the same 50 evaluation episodes.
+On Square, where only 9 of 100 warmup episodes succeed, its critic diverges and
+success falls to zero. The planned evaluation examines action-value calibration,
+online sample efficiency, and computation cost, with a shared-critic gate
+isolating the effect of the proposed scoring rule.
+
+% ---------------------------------------------------------------------------
+% (2) Section 1, the contributions list: add a third item after item 2.
+% NEW item:
+  \item A latent-steering pilot that keeps the flow frozen and learns its noise
+  distribution from executed transitions, with paired BC comparisons on all
+  three tasks (Sections~5.3 and~5.4).
+
+% ---------------------------------------------------------------------------
+% (3) Section 4, "Baselines" paragraph, last sentence.
+% OLD: "A separate DSRL-inspired implementation is available for a follow-on
+%       comparison after matching its budget to the primary study."
+% NEW:
+A separate DSRL-inspired latent-steering learner has been piloted on Can
+(Section~5.3) and run at full budget on all three tasks (Section~5.4). It will
+be compared with the gating conditions once their interaction budgets are
+matched.
+
+% ---------------------------------------------------------------------------
+% (4) Section 4, "Training and evaluation settings": add at the end.
+% NEW:
+The latent-steering runs use 100 BC warmup episodes, $10^5$ online steps with
+20 learner updates per step, KL weight $\beta=3$, and 50 paired evaluation
+episodes every $10^4$ online steps. Learner updates run in float64 on an RTX~5080
+GPU; simulation and all seeded noise stay on the CPU, so paired evaluations
+are unchanged by the device.
+
+% ---------------------------------------------------------------------------
+% (5) Section 6, "Remaining plan", first paragraph: insert after the first sentence.
+% NEW:
+Full-budget latent steering improved on BC for Lift and Can with one training
+seed (Section~5.4). We will add at least two further seeds for both tasks. For
+Square, we will bound TD targets to the reachable return range, lower the
+update-to-data ratio, and seed replay with demonstrations before rerunning.
+
+% ---------------------------------------------------------------------------
+% (6) Work-package table, latent-steering row: change "Full-budget runs, additional
+%     seeds, and $\beta$ sensitivity" to "Additional seeds, Square stabilization, and
+%     $\beta$ sensitivity".
+
+% (7) Table 3: replace the [Name] placeholders with your team's actual owners.

@@ -17,6 +17,12 @@ def tensor(x):
     return torch.as_tensor(x, dtype=DTYPE)
 
 
+def generator_device(generator, device):
+    """Draw random numbers where the generator lives (CPU generators keep the
+    CPU noise streams identical when the models run on CUDA)."""
+    return device if generator is None else generator.device
+
+
 def mlp(n, m, hidden=128):
     return nn.Sequential(nn.Linear(n, hidden), nn.SiLU(), nn.Linear(hidden, hidden),
                          nn.SiLU(), nn.Linear(hidden, m)).to(DTYPE)
@@ -144,15 +150,17 @@ class Flow(nn.Module):
         """Decode the arm and independently sample the frozen gripper head."""
         a = self.decode(s, z, steps)
         if self.hybrid:
-            grip = torch.multinomial(self.gripper_dist(s).probs, 1, generator=generator)-1
-            a = torch.cat([a, grip.to(a.dtype)], -1)
+            probs = self.gripper_dist(s).probs
+            probs = probs.to(generator_device(generator, probs.device))
+            grip = torch.multinomial(probs, 1, generator=generator)-1
+            a = torch.cat([a, grip.to(a.device, a.dtype)], -1)
         return a
 
     @torch.no_grad()
     def sample(self, s, steps=16, generator=None):
         z = torch.randn((*s.shape[:-1], self.continuous_dim), dtype=s.dtype,
-                        device=s.device, generator=generator)
-        return self.action_from_noise(s, z, steps, generator)
+                        device=generator_device(generator, s.device), generator=generator)
+        return self.action_from_noise(s, z.to(s.device), steps, generator)
 
     def log_prob(self, s, a, steps=16, trace='exact', trace_samples=1, generator=None):
         if a.shape[-1] != self.action_dim or (a[..., :self.continuous_dim].abs()>=1).any():

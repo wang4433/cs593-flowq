@@ -1,0 +1,26 @@
+{
+  "bc_config": "can_bc_stage1.json",
+  "dsrl": {
+    "seed": 0,
+    "eval_seed": 40000,
+    "hidden": 128,
+    "batch_size": 128,
+    "lr": 0.0003,
+    "tau": 0.005,
+    "grad_clip": 10.0,
+    "kl_beta": 3.0,
+    "prior_fraction": 0.5,
+    "flow_steps": 16,
+    "replay_capacity": 50000,
+    "warmup_episodes": 50,
+    "critic_warmup_updates": 2000,
+    "pretrain_updates": 2000,
+    "online_steps": 5000,
+    "utd": 5,
+    "eval_episodes": 20,
+    "eval_interval": 2500,
+    "log_stride": 50,
+    "actor_mean_bound": 2.0,
+    "train_flow_steps": 8
+  }
+}

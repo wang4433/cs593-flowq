@@ -1,6 +1,9 @@
 """Train/evaluate DSRL-inspired steering without modifying the BC checkpoint.
 
-Run ``python -m flowq.dsrl_runner --help``. CPU/float64 matches existing FlowQ.
+Run ``python -m flowq.dsrl_runner --help``. Float64 everywhere; ``--device auto`` (default)
+runs the networks on CUDA when available, otherwise CPU. Environment stepping and
+all seeded noise generators stay on the CPU, so paired BC/DSRL evaluations keep
+identical noise streams on either device.
 Evaluation uses separate environments, seeds and RNGs and never enters replay.
 """
 import argparse
@@ -61,6 +64,24 @@ def validate_config(cfg):
             raise ValueError('Nonfinite reward convention')
 
 
+def resolve_device(name='auto'):
+    if name == 'auto':
+        name = 'cuda' if torch.cuda.is_available() else 'cpu'
+    device = torch.device(name)
+    if device.type == 'cuda':
+        if not torch.cuda.is_available():
+            raise RuntimeError('CUDA requested but torch.cuda.is_available() is False')
+        torch.zeros(1, dtype=torch.float64, device=device)  # fail fast on unsupported GPUs
+    return device
+
+
+def device_info(device):
+    info = dict(device=str(device), torch=torch.__version__)
+    if device.type == 'cuda':
+        info.update(gpu=torch.cuda.get_device_name(device), cuda=torch.version.cuda)
+    return info
+
+
 def learner_config(cfg):
     return dict(cfg['dsrl'], gamma=cfg['gamma'])
 
@@ -75,14 +96,14 @@ def replay_contract(cfg, flow):
 
 @torch.no_grad()
 def act(flow, learner, state, generator, steps, baseline=False, mean_noise=False):
-    s = tensor(state)[None]
+    s = tensor(state)[None].to(flow.mean.device)
     if baseline:
-        z = torch.randn(1, 6, dtype=s.dtype, generator=generator)
+        z = torch.randn(1, 6, dtype=s.dtype, generator=generator).to(s.device)
     else:
         z = learner.actor.sample(state_features(flow, s), generator=generator,
                                  deterministic=mean_noise)
     a = flow.action_from_noise(s, z, steps=steps, generator=generator)
-    return a[0].numpy(), z[0].numpy()
+    return a[0].cpu().numpy(), z[0].cpu().numpy()
 
 
 def evaluate_pair(cfg, flow, learner, metadata, env_factory=Task, mean_noise=False):
@@ -141,13 +162,14 @@ def save_checkpoint(path, cfg, flow_path, flow, learner, training_steps):
                     training_env_steps=training_steps), path)
 
 
-def load_checkpoint(path, flow_path):
+def load_checkpoint(path, flow_path, device='cpu'):
     ck = torch.load(path, map_location='cpu', weights_only=False)
     if ck.get('schema') not in ('flowq.dsrl.v1', 'flowq.dsrl.v2') or ck['flow_sha256'] != sha256(flow_path):
         raise ValueError('DSRL checkpoint schema or frozen flow identity mismatch')
     cfg = ck['config']
     validate_config(cfg)
     flow, bc = load_flow(flow_path, cfg)
+    flow.to(device)
     if ck['flow_fingerprint'] != fingerprint(flow):
         raise ValueError('Frozen model fingerprint mismatch')
     # A tanh mean applied to old weights would silently change the old policy.
@@ -156,7 +178,7 @@ def load_checkpoint(path, flow_path):
     return cfg, flow, bc, learner
 
 
-def train(cfg, flow_path, out, replay_path=None, env_factory=Task):
+def train(cfg, flow_path, out, replay_path=None, env_factory=Task, device='cpu'):
     validate_config(cfg)
     d = cfg['dsrl']
     if not (d['warmup_episodes'] or replay_path):
@@ -167,7 +189,9 @@ def train(cfg, flow_path, out, replay_path=None, env_factory=Task):
     if out.exists():
         raise FileExistsError(out)
     seed(d['seed'])
+    device = torch.device(device)
     flow, bc = load_flow(flow_path, cfg)
+    flow.to(device)
     initial_flow = fingerprint(flow)
     learner = DSRLLearner(flow, learner_config(cfg))
     replay = ActionReplay(flow.obs_dim+1, d['replay_capacity'], d['seed']+1)
@@ -175,6 +199,8 @@ def train(cfg, flow_path, out, replay_path=None, env_factory=Task):
     imported = replay.load(replay_path, contract) if replay_path else 0
     out.mkdir(parents=True, exist_ok=False)
     write_json(out/'config.json', cfg)
+    write_json(out/'device.json', device_info(device))
+    print(json.dumps(dict(stage='start', **device_info(device))), flush=True)
     start = time.perf_counter()
     noise_rng = torch.Generator().manual_seed(d['seed']+100)
     warmup_steps, online_steps, evaluation_steps = 0, 0, 0
@@ -267,6 +293,7 @@ def train(cfg, flow_path, out, replay_path=None, env_factory=Task):
         partial_online_episode_steps=n, updates=learner.updates,
         learner_update_seconds=update_seconds,
         mean_update_seconds=update_seconds/max(learner.updates, 1),
+        compute=device_info(device),
         episodes=episodes, evaluations=evaluations, seconds=time.perf_counter()-start)
     write_json(out/'summary.json', report)
     return report
@@ -286,6 +313,9 @@ def main():
         train_p.add_argument('--'+name, type=int)
     train_p.add_argument('--kl-beta', type=float, help='Prior KL weight; suggested sweep: 1, 3, 10')
     train_p.add_argument('--actor-mean-bound', type=float, help='Mean = bound*tanh(raw_mean); default 2')
+    train_p.add_argument('--eval-interval', type=int, help='Online steps between evaluations')
+    train_p.add_argument('--log-stride', type=int, help='Updates between updates.jsonl rows')
+    train_p.add_argument('--device', default='auto', help="'auto' (CUDA if available), 'cpu', 'cuda' or 'cuda:N'")
     eval_p = sub.add_parser('eval', help='Compare a saved latent actor against its exact BC checkpoint')
     eval_p.add_argument('--checkpoint', required=True)
     eval_p.add_argument('--flow', required=True)
@@ -293,18 +323,21 @@ def main():
     eval_p.add_argument('--episodes', type=int)
     eval_p.add_argument('--seed', type=int)
     eval_p.add_argument('--mean-noise', action='store_true', help='Separate diagnostic; not stochastic policy evaluation')
+    eval_p.add_argument('--device', default='auto', help="'auto' (CUDA if available), 'cpu', 'cuda' or 'cuda:N'")
     args = parser.parse_args()
+    device = resolve_device(args.device)
     if args.command == 'train':
         cfg = load_config(args.config)
-        for name in tuple(n.replace('-', '_') for n in integer_overrides)+('kl_beta', 'actor_mean_bound'):
+        for name in (tuple(n.replace('-', '_') for n in integer_overrides)
+                     + ('kl_beta', 'actor_mean_bound', 'eval_interval', 'log_stride')):
             value = getattr(args, name)
             if value is not None:
                 cfg['dsrl'][name] = value
-        train(cfg, args.flow, args.out, args.replay)
+        train(cfg, args.flow, args.out, args.replay, device=device)
     else:
         if Path(args.out).exists():
             raise FileExistsError(args.out)
-        cfg, flow, bc, learner = load_checkpoint(args.checkpoint, args.flow)
+        cfg, flow, bc, learner = load_checkpoint(args.checkpoint, args.flow, device)
         cfg = copy.deepcopy(cfg)
         if args.episodes is not None:
             cfg['dsrl']['eval_episodes'] = args.episodes
@@ -312,7 +345,7 @@ def main():
             cfg['dsrl']['eval_seed'] = args.seed
         validate_config(cfg); seed(cfg['dsrl']['seed'])
         report = evaluate_pair(cfg, flow, learner, bc['manifest']['env'], mean_noise=args.mean_noise)
-        report.update(config=cfg, checkpoint_sha256=sha256(args.checkpoint), flow_sha256=sha256(args.flow))
+        report.update(compute=device_info(device), config=cfg, checkpoint_sha256=sha256(args.checkpoint), flow_sha256=sha256(args.flow))
         write_json(args.out, report)
 
 
