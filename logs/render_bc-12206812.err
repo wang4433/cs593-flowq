@@ -1,0 +1,9 @@
+[robosuite WARNING] No private macro file found! (macros.py:53)
+[robosuite WARNING] It is recommended to use a private macro file (macros.py:54)
+[robosuite WARNING] To setup, run: python /scratch/gilbreth/hmoondra/cs593_project/cs593-flowq/.conda/envs/cs593/lib/python3.10/site-packages/robosuite/scripts/setup_macros.py (macros.py:55)
+Traceback (most recent call last):
+  File "/scratch/gilbreth/hmoondra/cs593_project/cs593-flowq/scripts/render_bc_results.py", line 154, in <module>
+    if __name__ == '__main__': main()
+  File "/scratch/gilbreth/hmoondra/cs593_project/cs593-flowq/scripts/render_bc_results.py", line 104, in main
+    raise AssertionError(f'Recorded trajectory mismatch at step {step}: {max_error}')
+AssertionError: Recorded trajectory mismatch at step 237: 1.0146618534268015e-07

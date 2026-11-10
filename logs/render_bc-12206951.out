@@ -1,0 +1,11 @@
+== lift: episodes 0 2 1
+{"episode_index": 0, "seed": 30000, "success": true, "steps": 47, "video": "lift_seed_30000_success.mp4", "max_abs_observation_error": 2.3375398838787476e-14, "recorded_states_actions_rewards_and_termination_matched": true, "video_frames": 58, "fps": 10}
+{"episode_index": 2, "seed": 30002, "success": true, "steps": 54, "video": "lift_seed_30002_success.mp4", "max_abs_observation_error": 3.3861802251067274e-15, "recorded_states_actions_rewards_and_termination_matched": true, "video_frames": 65, "fps": 10}
+{"episode_index": 1, "seed": 30001, "success": false, "steps": 300, "video": "lift_seed_30001_timeout.mp4", "max_abs_observation_error": 5.22067095165557e-07, "recorded_states_actions_rewards_and_termination_matched": true, "video_frames": 311, "fps": 10}
+Videos and previews saved to runs/verify_flow_12036366/lift/rendered
+== can: episodes 0 1 2
+{"episode_index": 0, "seed": 30000, "success": true, "steps": 108, "video": "can_seed_30000_success.mp4", "max_abs_observation_error": 2.384185791015625e-07, "recorded_states_actions_rewards_and_termination_matched": true, "video_frames": 119, "fps": 10}
+{"episode_index": 1, "seed": 30001, "success": true, "steps": 115, "video": "can_seed_30001_success.mp4", "max_abs_observation_error": 1.4028279110789299e-05, "recorded_states_actions_rewards_and_termination_matched": true, "video_frames": 126, "fps": 10}
+{"episode_index": 2, "seed": 30002, "success": false, "steps": 300, "video": "can_seed_30002_timeout.mp4", "max_abs_observation_error": 4.462420086781549e-07, "recorded_states_actions_rewards_and_termination_matched": true, "video_frames": 311, "fps": 10}
+Videos and previews saved to runs/verify_flow_12036366/can/rendered
+== square: episodes 8 11 0

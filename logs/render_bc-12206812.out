@@ -1,0 +1,3 @@
+== lift: episodes 0 2 1
+{"episode_index": 0, "seed": 30000, "success": true, "steps": 47, "video": "lift_seed_30000_success.mp4", "max_abs_observation_error": 2.3375398838787476e-14, "recorded_states_actions_rewards_and_termination_matched": true, "video_frames": 58, "fps": 10}
+{"episode_index": 2, "seed": 30002, "success": true, "steps": 54, "video": "lift_seed_30002_success.mp4", "max_abs_observation_error": 3.3861802251067274e-15, "recorded_states_actions_rewards_and_termination_matched": true, "video_frames": 65, "fps": 10}

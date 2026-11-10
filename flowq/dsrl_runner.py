@@ -17,8 +17,9 @@ import time
 import numpy as np
 import torch
 
-from .data import KEYS, sha256
+from .data import KEYS, load_demos, sha256
 from .dsrl import ActionReplay, DSRLLearner, state_features
+from .dual import DualLearner
 from .env import Task
 from .flow import fingerprint, tensor
 from .runner import load_flow, seed, write_json
@@ -51,6 +52,20 @@ def validate_config(cfg):
     bound = d.get('actor_mean_bound', 2.)
     if not math.isfinite(bound) or bound <= 0:
         raise ValueError('actor_mean_bound must be finite and positive')
+    std_min = d.get('actor_std_min', math.exp(-5))
+    if not math.isfinite(std_min) or not 0 < std_min <= 1:
+        raise ValueError('actor_std_min must lie in (0, 1]')
+    dual = d.get('dual')
+    if dual is not None:
+        for key in ('flow_every', 'flow_samples', 'demo_batch'):
+            if type(dual[key]) is not int or dual[key] < (2 if key == 'flow_samples' else 1):
+                raise ValueError(f'Invalid dual setting: {key}')
+        for key in ('residual_bound', 'flow_lr', 'flow_tau', 'demo_weight'):
+            if type(dual[key]) not in (int, float) or not math.isfinite(dual[key]):
+                raise ValueError(f'Nonfinite dual setting: {key}')
+        if (dual['residual_bound'] <= 0 or dual['flow_lr'] <= 0 or dual['flow_tau'] <= 0
+                or dual['demo_weight'] < 0):
+            raise ValueError('Invalid dual flow-correction settings')
     for key in ('lr', 'grad_clip', 'kl_beta', 'prior_fraction', 'tau'):
         if not math.isfinite(d[key]):
             raise ValueError(f'Nonfinite DSRL setting: {key}')
@@ -83,7 +98,14 @@ def device_info(device):
 
 
 def learner_config(cfg):
-    return dict(cfg['dsrl'], gamma=cfg['gamma'])
+    return dict(cfg['dsrl'], gamma=cfg['gamma'], boundary_epsilon=cfg.get('boundary_epsilon', 1e-3))
+
+
+def make_learner(flow, cfg, demos=None, legacy_actor=False):
+    """Plain DSRL, or dual RL when the config has a ``dsrl.dual`` block."""
+    if cfg['dsrl'].get('dual') is not None:
+        return DualLearner(flow, learner_config(cfg), demos)
+    return DSRLLearner(flow, learner_config(cfg), legacy_actor=legacy_actor)
 
 
 def replay_contract(cfg, flow):
@@ -107,9 +129,17 @@ def act(flow, learner, state, generator, steps, baseline=False, mean_noise=False
 
 
 def evaluate_pair(cfg, flow, learner, metadata, env_factory=Task, mean_noise=False):
-    """Paired reset seeds; stochastic learned policy is the default estimand."""
+    """Paired reset seeds; stochastic learned policy is the default estimand.
+
+    ``flow`` is the original BC flow. Dual RL adds a 'reshaped' arm (corrected flow,
+    prior noise) between 'bc' and 'dsrl' (corrected flow, learned noise).
+    """
     d = cfg['dsrl']
-    modules = (flow, learner.actor, learner.action_critic, learner.noise_critic, learner.target)
+    arms = [('bc', flow, True)]
+    if learner.flow is not flow:
+        arms.append(('reshaped', learner.flow, True))
+    arms.append(('dsrl', learner.flow, False))
+    modules = (flow, learner.flow, learner.actor, learner.action_critic, learner.noise_critic, learner.target)
     before = [fingerprint(m) for m in modules]
     modes = [m.training for m in modules]
     updates = learner.updates
@@ -119,7 +149,7 @@ def evaluate_pair(cfg, flow, learner, metadata, env_factory=Task, mean_noise=Fal
         for m in modules:
             m.eval()
         with torch.random.fork_rng():
-            for method in ('bc', 'dsrl'):
+            for method, arm_flow, baseline in arms:
                 env = env_factory(cfg, metadata)
                 episodes = []
                 try:
@@ -130,8 +160,8 @@ def evaluate_pair(cfg, flow, learner, metadata, env_factory=Task, mean_noise=Fal
                         initial = hashlib.sha256(s.tobytes()).hexdigest()
                         done, reward_sum, discounted, n = False, 0., 0., 0
                         while not done:
-                            a, _ = act(flow, learner, s, g, d['flow_steps'],
-                                       baseline=method == 'bc', mean_noise=mean_noise)
+                            a, _ = act(arm_flow, learner, s, g, d['flow_steps'],
+                                       baseline=baseline, mean_noise=mean_noise)
                             s, r, done, info = env.step(a)
                             discounted += cfg['gamma']**n*r
                             reward_sum += r; n += 1
@@ -149,38 +179,45 @@ def evaluate_pair(cfg, flow, learner, metadata, env_factory=Task, mean_noise=Fal
             m.train(mode)
     assert before == [fingerprint(m) for m in modules] and updates == learner.updates
     assert all(a['initial_observation_sha256'] == b['initial_observation_sha256']
-               for a, b in zip(result['bc']['episodes'], result['dsrl']['episodes']))
+               for method, _, _ in arms[1:]
+               for a, b in zip(result['bc']['episodes'], result[method]['episodes']))
     result.update(evaluation_did_not_train=True,
                   dsrl_sampling='mean_noise' if mean_noise else 'stochastic',
-                  evaluation_steps=sum(result[m]['environment_steps'] for m in ('bc', 'dsrl')))
+                  evaluation_steps=sum(result[m]['environment_steps'] for m, _, _ in arms))
     return result
 
 
 def save_checkpoint(path, cfg, flow_path, flow, learner, training_steps):
-    torch.save(dict(schema='flowq.dsrl.v2', config=cfg, flow_sha256=sha256(flow_path),
+    # v3 = dual RL: the learner state also holds the trained flow correction.
+    schema = 'flowq.dsrl.v3' if isinstance(learner, DualLearner) else 'flowq.dsrl.v2'
+    torch.save(dict(schema=schema, config=cfg, flow_sha256=sha256(flow_path),
                     flow_fingerprint=fingerprint(flow), learner=learner.state_dict(),
                     training_env_steps=training_steps), path)
 
 
 def load_checkpoint(path, flow_path, device='cpu'):
     ck = torch.load(path, map_location='cpu', weights_only=False)
-    if ck.get('schema') not in ('flowq.dsrl.v1', 'flowq.dsrl.v2') or ck['flow_sha256'] != sha256(flow_path):
+    if (ck.get('schema') not in ('flowq.dsrl.v1', 'flowq.dsrl.v2', 'flowq.dsrl.v3')
+            or ck['flow_sha256'] != sha256(flow_path)):
         raise ValueError('DSRL checkpoint schema or frozen flow identity mismatch')
     cfg = ck['config']
     validate_config(cfg)
+    if (ck['schema'] == 'flowq.dsrl.v3') != (cfg['dsrl'].get('dual') is not None):
+        raise ValueError('Checkpoint schema does not match its dual-RL configuration')
     flow, bc = load_flow(flow_path, cfg)
     flow.to(device)
     if ck['flow_fingerprint'] != fingerprint(flow):
         raise ValueError('Frozen model fingerprint mismatch')
     # A tanh mean applied to old weights would silently change the old policy.
-    learner = DSRLLearner(flow, learner_config(cfg), legacy_actor=ck['schema'] == 'flowq.dsrl.v1')
+    learner = make_learner(flow, cfg, legacy_actor=ck['schema'] == 'flowq.dsrl.v1')
     learner.load_state_dict(ck['learner'])
     return cfg, flow, bc, learner
 
 
-def train(cfg, flow_path, out, replay_path=None, env_factory=Task, device='cpu'):
+def train(cfg, flow_path, out, replay_path=None, env_factory=Task, device='cpu', demos=None):
     validate_config(cfg)
     d = cfg['dsrl']
+    dual = d.get('dual')
     if not (d['warmup_episodes'] or replay_path):
         raise ValueError('Provide warmup episodes or a training replay file')
     if not (d['critic_warmup_updates'] or d['pretrain_updates'] or d['online_steps']):
@@ -193,7 +230,11 @@ def train(cfg, flow_path, out, replay_path=None, env_factory=Task, device='cpu')
     flow, bc = load_flow(flow_path, cfg)
     flow.to(device)
     initial_flow = fingerprint(flow)
-    learner = DSRLLearner(flow, learner_config(cfg))
+    if dual is not None and dual['demo_weight'] > 0 and demos is None:
+        # Anchor on the BC training split only; validation demos stay held out.
+        (demo_states, demo_actions), _ = load_demos(cfg, bc['manifest'])
+        demos = (demo_states, demo_actions)
+    learner = make_learner(flow, cfg, demos)
     replay = ActionReplay(flow.obs_dim+1, d['replay_capacity'], d['seed']+1)
     contract = replay_contract(cfg, flow)
     imported = replay.load(replay_path, contract) if replay_path else 0
@@ -250,7 +291,8 @@ def train(cfg, flow_path, out, replay_path=None, env_factory=Task, device='cpu')
             if d['online_steps']:
                 s = env.reset(d['seed']+200000)
             for step in range(d['online_steps']):
-                a, z = act(flow, learner, s, noise_rng, d['flow_steps'])
+                # learner.flow is the BC flow itself for plain DSRL, the corrected flow for dual RL.
+                a, z = act(learner.flow, learner, s, noise_rng, d['flow_steps'])
                 ns, r, done, info = env.step(a)
                 replay.add(s, a, r, ns, done, noise=z)
                 s = ns; online_steps += 1; n += 1; ret += r
@@ -283,8 +325,10 @@ def train(cfg, flow_path, out, replay_path=None, env_factory=Task, device='cpu')
     assert len(replay) == min(imported+warmup_steps+online_steps, d['replay_capacity'])
     save_checkpoint(out/'dsrl.pt', cfg, flow_path, flow, learner, warmup_steps+online_steps)
     replay.save(out/'replay.npz', contract)
-    report = dict(algorithm='DSRL-inspired noise-critic distillation',
+    report = dict(algorithm=('Dual RL: DSRL steering + critic-weighted bounded flow correction'
+                             if dual is not None else 'DSRL-inspired noise-critic distillation'),
         flow_sha256=sha256(flow_path), frozen_unchanged=True, config=cfg,
+        flow_updates=getattr(learner, 'flow_updates', 0),
         imported_transitions=imported, retained_replay_transitions=len(replay),
         replay_source_sha256=sha256(replay_path) if replay_path else None,
         warmup_env_steps=warmup_steps, online_env_steps=online_steps,

@@ -21,27 +21,29 @@ from flowq.flow import fingerprint
 from flowq.runner import load_flow, seed, write_json
 
 
-FONT_ROOT = Path('/usr/share/fonts/truetype/dejavu')
+# Debian and RHEL install DejaVu in different directories.
+FONT_ROOTS = (Path('/usr/share/fonts/truetype/dejavu'), Path('/usr/share/fonts/dejavu-sans-fonts'))
+CAMERA_LABELS = {'sideview': 'Side view', 'frontview': 'Front view', 'agentview': 'Gripper / object close-up'}
 
 
 def font(size, bold=False):
-    path = FONT_ROOT / ('DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf')
-    return ImageFont.truetype(str(path), size) if path.exists() else ImageFont.load_default()
+    name = 'DejaVuSans-Bold.ttf' if bold else 'DejaVuSans.ttf'
+    path = next((root/name for root in FONT_ROOTS if (root/name).exists()), None)
+    return ImageFont.truetype(str(path), size) if path else ImageFont.load_default()
 
 
-def frame_for(env, record, step, fps, end=False):
-    views = [env.env.sim.render(width=640, height=480, camera_name=c)[::-1].copy()
-             for c in ('sideview', 'agentview')]
+def frame_for(env, record, step, fps, task, cameras, end=False):
+    views = [env.env.sim.render(width=640, height=480, camera_name=c)[::-1].copy() for c in cameras]
     canvas = Image.new('RGB', (1280, 576), '#111827')
     canvas.paste(Image.fromarray(views[0]), (0, 64))
     canvas.paste(Image.fromarray(views[1]), (640, 64))
     draw = ImageDraw.Draw(canvas)
     outcome = 'SUCCESS' if record['success'] else 'TIMEOUT'
     color = '#66e0ae' if record['success'] else '#ffcb78'
-    draw.text((18, 8), f'Lift | Frozen Flow BC | seed {record["seed"]}', font=font(24, True), fill='white')
+    draw.text((18, 8), f'{task.capitalize()} | Frozen Flow BC | seed {record["seed"]}', font=font(24, True), fill='white')
     draw.text((1000, 8), f'Result: {outcome}', font=font(22, True), fill=color)
-    draw.text((18, 39), 'Side view', font=font(16), fill='#cbd5e1')
-    draw.text((658, 39), 'Gripper / object close-up', font=font(16), fill='#cbd5e1')
+    draw.text((18, 39), CAMERA_LABELS[cameras[0]], font=font(16), fill='#cbd5e1')
+    draw.text((658, 39), CAMERA_LABELS[cameras[1]], font=font(16), fill='#cbd5e1')
     status = 'END - final frame held' if end else f'step {step:03d}/{record["steps"]:03d} | simulation {step / 20:.2f}s'
     draw.text((18, 551), status, font=font(16), fill='white')
     draw.text((650, 551), f'Verified recorded-action replay | {fps / 20:.1f}x playback', font=font(16), fill='#cbd5e1')
@@ -56,6 +58,8 @@ def main():
     parser.add_argument('--episodes', type=int, nargs='+', default=[0, 2, 7, 1])
     parser.add_argument('--fps', type=int, default=10, help='20 = real time; 10 = half speed')
     parser.add_argument('--out', default='runs/lift_bc_stage1/rendered')
+    parser.add_argument('--tolerance', type=float, default=1e-7,
+                        help='Max |replayed - recorded| observation; MuJoCo is not bit-identical across CPU types')
     args = parser.parse_args()
     if args.fps < 1: parser.error('--fps must be positive')
     cfg = json.loads(Path(args.config).read_text())
@@ -70,47 +74,50 @@ def main():
     before = fingerprint(flow); start = time.perf_counter()
     from robosuite.utils.binding_utils import MjRenderContextOffscreen
     env = Task(cfg, ck['manifest']['env'])
+    task = cfg['task']
+    # Can's bin arena has no side camera; fall back to the front camera there.
+    cameras = ('sideview' if 'sideview' in env.env.sim.model.camera_names else 'frontview', 'agentview')
     manifest = []; final_frames = []; storyboard_rows = []
     writer_args = dict(fps=args.fps, codec='libx264', quality=8, pixelformat='yuv420p',
                        ffmpeg_params=['-movflags', '+faststart'])
     try:
-        with imageio.get_writer(out / 'lift_results_montage.mp4', **writer_args) as montage:
+        with imageio.get_writer(out / f'{task}_results_montage.mp4', **writer_args) as montage:
             for idx in args.episodes:
                 record = results['episodes'][idx]
                 with np.load(evaluation / f'episode_{idx:03d}.npz') as saved:
                     states = saved['states']; actions = saved['actions']; rewards = saved['raw_rewards']
                 s = env.reset(record['seed'])
                 max_error = float(np.max(np.abs(s - states[0])))
-                if max_error > 1e-7: raise AssertionError('Initial observation mismatch')
+                if max_error > args.tolerance: raise AssertionError('Initial observation mismatch')
                 context = MjRenderContextOffscreen(env.env.sim, device_id=-1)
                 context.vopt.geomgroup[0] = 0; context.vopt.geomgroup[1] = 1
                 result_name = 'success' if record['success'] else 'timeout'
-                filename = f'lift_seed_{record["seed"]}_{result_name}.mp4'
+                filename = f'{task}_seed_{record["seed"]}_{result_name}.mp4'
                 snapshots = {}; preview = []
                 try:
                     with imageio.get_writer(out / filename, **writer_args) as video:
-                        frame, closeup = frame_for(env, record, 0, args.fps)
+                        frame, closeup = frame_for(env, record, 0, args.fps, task, cameras)
                         video.append_data(frame); montage.append_data(frame); snapshots[0] = closeup
                         if idx == args.episodes[0]: preview.append(Image.fromarray(frame).resize((640, 288)))
                         for step, action in enumerate(actions, 1):
                             s, _, done, info = env.step(action)
                             max_error = max(max_error, float(np.max(np.abs(s - states[step]))))
-                            if max_error > 1e-7 or abs(info['raw_reward'] - rewards[step-1]) > 1e-10:
+                            if max_error > args.tolerance or abs(info['raw_reward'] - rewards[step-1]) > 1e-10:
                                 raise AssertionError(f'Recorded trajectory mismatch at step {step}: {max_error}')
                             if done != (step == len(actions)):
                                 raise AssertionError('Termination differs from saved episode')
-                            frame, closeup = frame_for(env, record, step, args.fps)
+                            frame, closeup = frame_for(env, record, step, args.fps, task, cameras)
                             video.append_data(frame); montage.append_data(frame)
                             if step in (len(actions)//2, len(actions)): snapshots[step] = closeup
                             if idx == args.episodes[0]: preview.append(Image.fromarray(frame).resize((640, 288)))
                         assert bool(info['success']) == record['success']
-                        final, _ = frame_for(env, record, len(actions), args.fps, end=True)
+                        final, _ = frame_for(env, record, len(actions), args.fps, task, cameras, end=True)
                         for _ in range(args.fps):
                             video.append_data(final); montage.append_data(final)
                         final_frames.append(Image.fromarray(final))
                         if preview:
                             preview.extend([Image.fromarray(final).resize((640, 288))] * args.fps)
-                            preview[0].save(out / 'lift_success_preview.gif', save_all=True,
+                            preview[0].save(out / f'{task}_preview.gif', save_all=True,
                                 append_images=preview[1:], duration=1000/args.fps, loop=0)
                     storyboard_rows.append((record, snapshots))
                     manifest.append(dict(episode_index=idx, seed=record['seed'],success=record['success'],
