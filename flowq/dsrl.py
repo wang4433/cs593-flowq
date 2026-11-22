@@ -31,7 +31,8 @@ class LatentActor(nn.Module):
 
     mean_bound=None is reserved for loading legacy v1 checkpoints.
     """
-    def __init__(self, obs_dim, latent_dim=6, hidden=128, mean_bound=2., std_max=1., std_min=math.exp(-5)):
+    def __init__(self, obs_dim, latent_dim=6, hidden=128, mean_bound=2., std_max=1., std_min=math.exp(-5),
+                 layers=2, layer_norm=False):
         super().__init__()
         if mean_bound is not None and (not math.isfinite(mean_bound) or mean_bound <= 0):
             raise ValueError('Actor mean bound must be finite and positive')
@@ -41,7 +42,7 @@ class LatentActor(nn.Module):
             raise ValueError('Std floor must lie in (0, 1]')
         self.mean_bound, self.std_max, self.std_min = mean_bound, std_max, std_min
         self.latent_dim = latent_dim
-        self.net = mlp(obs_dim, 2*latent_dim, hidden)
+        self.net = mlp(obs_dim, 2*latent_dim, hidden, layers, layer_norm)
         nn.init.zeros_(self.net[-1].weight)
         nn.init.zeros_(self.net[-1].bias)
 
@@ -153,13 +154,16 @@ class DSRLLearner:
         # Learner networks live wherever the frozen flow was placed (CPU or CUDA).
         self.device = flow.mean.device
         n = flow.obs_dim+1
+        # Defaults (2 layers, no LayerNorm) are the original networks, so older configs
+        # and checkpoints rebuild exactly; v2 configs set these explicitly.
+        net = dict(layers=cfg.get('layers', 2), layer_norm=cfg.get('layer_norm', False))
         self.actor = LatentActor(n, 6, cfg['hidden'],
                                 mean_bound=None if legacy_actor else cfg.get('actor_mean_bound', 2.),
                                 std_max=math.e if legacy_actor else 1.,
-                                std_min=math.exp(-5) if legacy_actor else cfg.get('actor_std_min', math.exp(-5))
-                                ).to(self.device)
-        self.action_critic = Critic(n, 7, cfg['hidden']).to(self.device)
-        self.noise_critic = Critic(n, 6, cfg['hidden']).to(self.device)
+                                std_min=math.exp(-5) if legacy_actor else cfg.get('actor_std_min', math.exp(-5)),
+                                **net).to(self.device)
+        self.action_critic = Critic(n, 7, cfg['hidden'], **net).to(self.device)
+        self.noise_critic = Critic(n, 6, cfg['hidden'], **net).to(self.device)
         self.target = copy.deepcopy(self.action_critic).requires_grad_(False)
         self.actor_opt = torch.optim.Adam(self.actor.parameters(), lr=cfg['lr'])
         self.action_opt = torch.optim.Adam(self.action_critic.parameters(), lr=cfg['lr'])

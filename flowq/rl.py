@@ -43,9 +43,9 @@ class Actor(nn.Module):
 
 
 class Critic(nn.Module):
-    def __init__(self, obs_dim, act_dim, hidden):
+    def __init__(self, obs_dim, act_dim, hidden, layers=2, layer_norm=False):
         super().__init__()
-        self.qs = nn.ModuleList([mlp(obs_dim+act_dim, 1, hidden) for _ in range(2)])
+        self.qs = nn.ModuleList([mlp(obs_dim+act_dim, 1, hidden, layers, layer_norm) for _ in range(2)])
 
     def forward(self,s,a):
         return torch.stack([q(torch.cat([s,a],-1)).squeeze(-1) for q in self.qs])

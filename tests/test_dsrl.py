@@ -254,6 +254,35 @@ class DSRLTests(unittest.TestCase):
             with self.assertRaises(FileExistsError):
                 train(cfg, flow_path, root/'online', env_factory=TinyTask)
 
+    def test_deeper_layernorm_networks_and_std_floor(self):
+        def count(module, kind):
+            return sum(isinstance(m, kind) for m in module.modules())
+        # Defaults rebuild the original 2-layer networks with unchanged parameter names.
+        legacy = DSRLLearner(self.flow, settings())
+        self.assertEqual(count(legacy.actor, nn.Linear), 3)
+        self.assertEqual(count(legacy.action_critic, nn.LayerNorm), 0)
+        self.assertIn('qs.0.4.weight', legacy.action_critic.state_dict())
+        big = DSRLLearner(self.flow, dict(settings(), layers=3, layer_norm=True, actor_std_min=.2))
+        for module, heads in ((big.actor, 1), (big.action_critic, 2), (big.noise_critic, 2)):
+            self.assertEqual(count(module, nn.Linear), 4*heads)     # 3 hidden + output per head
+            self.assertEqual(count(module, nn.LayerNorm), 3*heads)
+        # Zero-initialized output still starts the actor exactly at the BC noise prior.
+        s = torch.randn(5, 4, dtype=DTYPE)
+        self.assertTrue(torch.equal(big.actor.kl(s), torch.zeros(5, dtype=DTYPE)))
+        with torch.no_grad():
+            big.actor.net[-1].bias[6:].fill_(-100.)
+        self.assertGreaterEqual(big.actor.distribution(s).scale.min().item(), .2-1e-12)
+        d = dict(settings(), seed=0, eval_seed=0, batch_size=8, replay_capacity=10, warmup_episodes=1,
+                 critic_warmup_updates=1, pretrain_updates=0, online_steps=0, utd=1, eval_episodes=1,
+                 eval_interval=1, log_stride=1)
+        d.pop('gamma')
+        cfg = dict(task='lift', gamma=.99, horizon=3, reward_scale=5., reward_bias=-1., dsrl=d)
+        for key, value in (('layers', 0), ('layers', 2.5), ('layer_norm', 1)):
+            bad = copy.deepcopy(cfg)
+            bad['dsrl'][key] = value
+            with self.assertRaises(ValueError):
+                validate_config(bad)
+
 
 @unittest.skipUnless(torch.cuda.is_available(), 'CUDA not available')
 class DSRLCudaTests(unittest.TestCase):

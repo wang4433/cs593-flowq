@@ -55,6 +55,10 @@ def validate_config(cfg):
     std_min = d.get('actor_std_min', math.exp(-5))
     if not math.isfinite(std_min) or not 0 < std_min <= 1:
         raise ValueError('actor_std_min must lie in (0, 1]')
+    if type(d.get('layers', 2)) is not int or d.get('layers', 2) < 1:
+        raise ValueError('layers must be a positive integer')
+    if type(d.get('layer_norm', False)) is not bool:
+        raise ValueError('layer_norm must be true or false')
     dual = d.get('dual')
     if dual is not None:
         for key in ('flow_every', 'flow_samples', 'demo_batch'):
@@ -66,6 +70,11 @@ def validate_config(cfg):
         if (dual['residual_bound'] <= 0 or dual['flow_lr'] <= 0 or dual['flow_tau'] <= 0
                 or dual['demo_weight'] < 0):
             raise ValueError('Invalid dual flow-correction settings')
+        for key in ('correction_hidden', 'correction_layers'):
+            if key in dual and (type(dual[key]) is not int or dual[key] < 1):
+                raise ValueError(f'{key} must be a positive integer')
+        if type(dual.get('correction_layer_norm', False)) is not bool:
+            raise ValueError('correction_layer_norm must be true or false')
     for key in ('lr', 'grad_clip', 'kl_beta', 'prior_fraction', 'tau'):
         if not math.isfinite(d[key]):
             raise ValueError(f'Nonfinite DSRL setting: {key}')

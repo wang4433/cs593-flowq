@@ -52,6 +52,19 @@ class DualTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             ResidualFlow(self.flow, 0.)
 
+    def test_correction_is_sized_independently_and_starts_at_bc(self):
+        flow = ResidualFlow(self.flow, .5, hidden=24, layers=3, layer_norm=True)
+        linears = [m for m in flow.correction if isinstance(m, nn.Linear)]
+        self.assertEqual(len(linears), 4)                       # 3 hidden + output
+        self.assertEqual(linears[0].out_features, 24)           # not the base flow's 16
+        self.assertEqual(sum(isinstance(m, nn.LayerNorm) for m in flow.correction), 3)
+        s = torch.randn(8, 4, dtype=DTYPE)
+        z = torch.randn(8, 6, dtype=DTYPE)
+        self.assertTrue(torch.equal(flow.decode(s, z, steps=8), self.flow.decode(s, z, steps=8)))
+        learner = DualLearner(self.flow, dual_settings(correction_hidden=24, correction_layers=3,
+                                                       correction_layer_norm=True))
+        self.assertEqual(sum(isinstance(m, nn.LayerNorm) for m in learner.flow.correction), 3)
+
     def test_flow_update_tilts_prior_toward_rewarded_mode(self):
         base = freeze(TwoModeFlow())
         before_base = fingerprint(base)

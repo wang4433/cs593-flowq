@@ -23,7 +23,9 @@ class ResidualFlow(Flow):
     Every Flow method (decode, encode, sample, log_prob) runs through the corrected
     velocity. The base flow and its gripper head are never updated.
     """
-    def __init__(self, base, bound, hidden=None):
+    def __init__(self, base, bound, hidden=None, layers=None, layer_norm=False):
+        """``hidden``/``layers`` default to the base flow's; the correction can also be sized
+        independently (e.g. wider than a small base flow), with optional LayerNorm."""
         nn.Module.__init__(self)
         if not math.isfinite(bound) or bound <= 0:
             raise ValueError('Residual bound must be finite and positive')
@@ -32,8 +34,9 @@ class ResidualFlow(Flow):
         self.base, self.bound = base, float(bound)
         self.obs_dim, self.action_dim, self.hidden = base.obs_dim, base.action_dim, base.hidden
         self.hybrid, self.max_velocity, self.continuous_dim = base.hybrid, base.max_velocity, base.continuous_dim
+        self.layers = base.layers
         self.correction = mlp(self.obs_dim+self.continuous_dim+1, self.continuous_dim,
-                              hidden or base.hidden).to(base.mean.device)
+                              hidden or base.hidden, layers or base.layers, layer_norm).to(base.mean.device)
         nn.init.zeros_(self.correction[-1].weight)
         nn.init.zeros_(self.correction[-1].bias)
         self.eval()
@@ -75,7 +78,9 @@ class DualLearner(DSRLLearner):
     """DSRL steering of a ResidualFlow whose bounded correction is trained by the action critic."""
     def __init__(self, base, cfg, demos=None):
         self.dual = cfg['dual']
-        super().__init__(ResidualFlow(base, self.dual['residual_bound']), cfg)
+        super().__init__(ResidualFlow(base, self.dual['residual_bound'], self.dual.get('correction_hidden'),
+                                      self.dual.get('correction_layers'),
+                                      self.dual.get('correction_layer_norm', False)), cfg)
         self.base = base
         self.demo_states = self.demo_targets = None
         if demos is not None:

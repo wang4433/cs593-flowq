@@ -23,9 +23,17 @@ def generator_device(generator, device):
     return device if generator is None else generator.device
 
 
-def mlp(n, m, hidden=128):
-    return nn.Sequential(nn.Linear(n, hidden), nn.SiLU(), nn.Linear(hidden, hidden),
-                         nn.SiLU(), nn.Linear(hidden, m)).to(DTYPE)
+def mlp(n, m, hidden=128, layers=2, layer_norm=False):
+    """SiLU MLP with ``layers`` hidden layers, optionally LayerNorm after each hidden
+    Linear. layers=2 without LayerNorm is the original architecture (same parameter
+    names, so existing checkpoints load unchanged)."""
+    if type(layers) is not int or layers < 1:
+        raise ValueError('MLP needs a positive integer number of hidden layers')
+    body, width = [], n
+    for _ in range(layers):
+        body += [nn.Linear(width, hidden)]+([nn.LayerNorm(hidden)] if layer_norm else [])+[nn.SiLU()]
+        width = hidden
+    return nn.Sequential(*body, nn.Linear(hidden, m)).to(DTYPE)
 
 
 def fingerprint(module):
@@ -68,16 +76,16 @@ def rk4(fn, y, start, stop, steps):
 
 
 class Flow(nn.Module):
-    def __init__(self, obs_dim, action_dim=7, hidden=128, hybrid=True, max_velocity=None):
+    def __init__(self, obs_dim, action_dim=7, hidden=128, hybrid=True, max_velocity=None, layers=2):
         super().__init__()
-        self.obs_dim, self.action_dim, self.hidden = obs_dim, action_dim, hidden
+        self.obs_dim, self.action_dim, self.hidden, self.layers = obs_dim, action_dim, hidden, layers
         self.hybrid = hybrid
         self.max_velocity = max_velocity
         if max_velocity is not None and max_velocity <= 0:
             raise ValueError('max_velocity must be positive')
         self.continuous_dim = action_dim-int(hybrid)
-        self.net = mlp(obs_dim+self.continuous_dim+1, self.continuous_dim, hidden)
-        self.gripper = mlp(obs_dim, 3, hidden) if hybrid else None
+        self.net = mlp(obs_dim+self.continuous_dim+1, self.continuous_dim, hidden, layers)
+        self.gripper = mlp(obs_dim, 3, hidden, layers) if hybrid else None
         self.register_buffer('mean', torch.zeros(obs_dim, dtype=DTYPE))
         self.register_buffer('std', torch.ones(obs_dim, dtype=DTYPE))
 

@@ -37,6 +37,8 @@ def validate_config(cfg):
         raise ValueError('Invalid discount or temperature')
     if cfg.get('replay_demonstrations',False):
         raise ValueError('This runner implements the no-offline-data online replay condition only')
+    if type(cfg.get('flow_layers',2)) is not int or cfg.get('flow_layers',2)<1:
+        raise ValueError('flow_layers must be a positive integer')
 
 
 def features(s,flow):
@@ -56,7 +58,9 @@ def load_flow(path,cfg):
     if ck['task']!=cfg['task']: raise ValueError('Flow task mismatch')
     for key in ('train_mask','valid_mask','debug_demos','boundary_epsilon'):
         if ck['config'][key]!=cfg[key]: raise ValueError(f'Flow preprocessing/data mismatch: {key}')
-    flow=Flow(ck['obs_dim'],hidden=ck['hidden'],max_velocity=ck['config'].get('flow_max_velocity'))
+    # Checkpoints saved before flow_layers existed are the original 2-layer network.
+    flow=Flow(ck['obs_dim'],hidden=ck['hidden'],max_velocity=ck['config'].get('flow_max_velocity'),
+              layers=ck.get('layers',2))
     flow.load_state_dict(ck['flow']); freeze(flow)
     return flow,ck
 
@@ -67,7 +71,8 @@ def train_bc(cfg,out):
     manifest=audit(cfg)
     (s,a),(vs,va)=load_demos(cfg,manifest)
     s,a,vs,va=map(tensor,(s,a,vs,va))
-    flow=Flow(s.shape[-1],hidden=cfg['flow_hidden'],max_velocity=cfg.get('flow_max_velocity'))
+    flow=Flow(s.shape[-1],hidden=cfg['flow_hidden'],max_velocity=cfg.get('flow_max_velocity'),
+              layers=cfg.get('flow_layers',2))
     flow.mean.copy_(s.mean(0)); flow.std.copy_(s.std(0).clamp_min(cfg.get('obs_std_floor',1e-3)))
     opt=torch.optim.Adam(flow.parameters(),lr=cfg['lr'])
     logs=[]
@@ -82,7 +87,7 @@ def train_bc(cfg,out):
             logs.append(dict(step=step+1,loss=loss.item(),validation_fm_loss=vl.item()))
             print(json.dumps(logs[-1]),flush=True)
     Path(out).mkdir(parents=True,exist_ok=False)
-    ck=dict(flow=flow.state_dict(),obs_dim=s.shape[-1],hidden=cfg['flow_hidden'],
+    ck=dict(flow=flow.state_dict(),obs_dim=s.shape[-1],hidden=cfg['flow_hidden'],layers=flow.layers,
             task=cfg['task'],manifest=manifest,config=cfg,trained_on_original_demonstrations=True)
     torch.save(ck,Path(out)/'flow.pt')
     write_json(Path(out)/'bc.json',dict(updates=logs,seconds=time.perf_counter()-start,
