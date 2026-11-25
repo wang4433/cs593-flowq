@@ -1,0 +1,31 @@
+{
+  "bc_config": "square_bc_deep.json",
+  "dsrl": {
+    "seed": 0,
+    "eval_seed": 30000,
+    "hidden": 256,
+    "layers": 3,
+    "layer_norm": true,
+    "batch_size": 256,
+    "lr": 0.0003,
+    "tau": 0.005,
+    "grad_clip": 10.0,
+    "kl_beta": 3.0,
+    "prior_fraction": 0.5,
+    "flow_steps": 16,
+    "train_flow_steps": 8,
+    "replay_capacity": 200000,
+    "warmup_episodes": 50,
+    "critic_warmup_updates": 2000,
+    "pretrain_updates": 2000,
+    "online_steps": 20000,
+    "utd": 5,
+    "eval_episodes": 100,
+    "eval_interval": 10000,
+    "log_stride": 50,
+    "actor_mean_bound": 2.0,
+    "actor_std_min": 0.2,
+    "gripper_samples": 8,
+    "bc_ema": true
+  }
+}

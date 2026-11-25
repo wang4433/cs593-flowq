@@ -189,15 +189,17 @@ class DSRLLearner:
         return (probs*values).sum(-1)
 
     @torch.no_grad()
-    def td_target(self, rewards, next_states, terminals):
+    def td_target(self, rewards, next_states, terminals, discounts=None):
         # Do not decode terminal states: there is no next action at success or
         # the finite horizon, and terminal observations can be out of distribution.
+        # ``discounts`` (chunk transitions only) is gamma^n for the n executed steps.
         target = rewards.clone()
         active = terminals == 0
         if active.any():
             ns = next_states[active]
             z = self.actor.sample(state_features(self.flow, ns))
-            target[active] += self.cfg['gamma']*self.decoded_value(self.target, ns, z)
+            discount = self.cfg['gamma'] if discounts is None else discounts[active]
+            target[active] += discount*self.decoded_value(self.target, ns, z)
         return target
 
     def _step(self, loss, optimizer, module, label):
@@ -209,16 +211,17 @@ class DSRLLearner:
         optimizer.step()
 
     def update(self, batch, train_actor=True):
-        states, actions, rewards, next_states, terminals = (
-            v.to(self.device, non_blocking=True) for v in batch)
+        batch = [v.to(self.device, non_blocking=True) for v in batch]
+        # Chunk replays (flowq/chunk_rl.py) add a sixth column: gamma^n to the next decision.
+        states, actions, rewards, next_states, terminals = batch[:5]
         x = state_features(self.flow, states)
-        target = self.td_target(rewards, next_states, terminals)
+        target = self.td_target(rewards, next_states, terminals, batch[5] if len(batch) > 5 else None)
         action_loss = (self.action_critic(x, actions)-target).square().mean()
         self._step(action_loss, self.action_opt, self.action_critic, 'action critic loss')
 
         # Distill freshly decoded actions, not the logged action/noise pair.
         with torch.no_grad():
-            z = torch.randn(len(states), 6, dtype=states.dtype, device=states.device)
+            z = torch.randn(len(states), self.actor.latent_dim, dtype=states.dtype, device=states.device)
             actor_z = self.actor.sample(x)
             prior = torch.rand(len(states), 1, device=states.device) < self.cfg['prior_fraction']
             z = torch.where(prior, z, actor_z)

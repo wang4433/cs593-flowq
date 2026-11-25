@@ -1,0 +1,40 @@
+== 2026-11-24 15:52:17 unit tests
+Ran 33 tests in 96.936s
+
+OK (skipped=2)
+== 2026-11-24 15:54:46 train: seeds [0 1 2] x {dsrl, dual}
+== 2026-11-25 06:21:12 held-out paired evaluation (seeds 60000-60199)
+== 2026-11-25 07:49:26 comparison
+Per-run evaluations (training seeds 30000+, 100 episodes; known chunked BC = 70/100):
+  dsrl_s0  online= 10003  bc=70/100 dsrl=71/100  flow_updates=0  mean_update_s=0.767
+  dsrl_s0  online= 20003  bc=70/100 dsrl=74/100  flow_updates=0  mean_update_s=0.767
+  dsrl_s1  online= 10000  bc=70/100 dsrl=67/100  flow_updates=0  mean_update_s=0.762
+  dsrl_s1  online= 20000  bc=70/100 dsrl=69/100  flow_updates=0  mean_update_s=0.762
+  dsrl_s2  online= 10003  bc=70/100 dsrl=70/100  flow_updates=0  mean_update_s=0.767
+  dsrl_s2  online= 20000  bc=70/100 dsrl=67/100  flow_updates=0  mean_update_s=0.767
+  dual_s0  online= 10000  bc=70/100 reshaped=68/100 dsrl=68/100  flow_updates=5420  mean_update_s=1.525
+  dual_s0  online= 20003  bc=70/100 reshaped=69/100 dsrl=67/100  flow_updates=5420  mean_update_s=1.525
+  dual_s1  online= 10002  bc=70/100 reshaped=69/100 dsrl=65/100  flow_updates=5417  mean_update_s=1.501
+  dual_s1  online= 20001  bc=70/100 reshaped=63/100 dsrl=67/100  flow_updates=5417  mean_update_s=1.501
+  dual_s2  online= 10000  bc=70/100 reshaped=71/100 dsrl=79/100  flow_updates=5420  mean_update_s=1.560
+  dual_s2  online= 20002  bc=70/100 reshaped=70/100 dsrl=70/100  flow_updates=5420  mean_update_s=1.560
+
+Held-out (seeds 60000-60199, 200 episodes; known chunked BC = 150/200), pooled over seeds:
+  dsrl_s0  bc=150/200 dsrl=150/200  steered vs bc: gained 19, lost 19
+  dsrl_s1  bc=150/200 dsrl=150/200  steered vs bc: gained 21, lost 21
+  dsrl_s2  bc=150/200 dsrl=154/200  steered vs bc: gained 25, lost 21
+  dual_s0  bc=150/200 reshaped=145/200 dsrl=150/200  steered vs bc: gained 22, lost 22
+  dual_s1  bc=150/200 reshaped=145/200 dsrl=151/200  steered vs bc: gained 21, lost 20
+  dual_s2  bc=150/200 reshaped=144/200 dsrl=152/200  steered vs bc: gained 24, lost 22
+  pooled dsrl  bc        450/600 = 0.750
+  pooled dsrl  dsrl      454/600 = 0.757
+  pooled dual  bc        450/600 = 0.750
+  pooled dual  dsrl      453/600 = 0.755
+  pooled dual  reshaped  434/600 = 0.723
+
+Dual vs DSRL, steered arms on the same held-out starts (paired within each training seed):
+  dual_s0: dual-only successes 20, dsrl-only successes 20
+  dual_s1: dual-only successes 18, dsrl-only successes 17
+  dual_s2: dual-only successes 20, dsrl-only successes 22
+  all seeds: dual-only 58, dsrl-only 59
+== 2026-11-25 07:49:29 done: runs/chunk_rl_12524983
