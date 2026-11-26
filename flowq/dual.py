@@ -7,6 +7,12 @@ z ~ N(0,I) through the FROZEN BC flow, weighted per state by softmax(Q/tau). Its
 target is pi_BC * exp(Q/tau): one tilt anchored to BC, so repeated flow updates do
 not compound and steering does not count twice (Option A). An optional unweighted
 demonstration term anchors the correction further. See docs/DUAL.md.
+
+Optional trust region (``dual.displacement_target``): tau is the multiplier of
+KL(p_theta || pi_BC) in max E[Q] - tau*KL, so it is adapted by dual ascent to hold the
+mean action displacement |f_theta(s,z) - f_BC(s,z)| at the target: tau shrinks
+(stronger tilt) while the correction moves less than the target and grows back
+(tilt toward BC itself) when it moves more. Without the key tau stays fixed.
 """
 import math
 
@@ -89,9 +95,27 @@ class DualLearner(DSRLLearner):
             # Same inward smoothing and coordinates as BC training (Flow.loss).
             self.demo_states = states
             self.demo_targets = torch.atanh(actions[:, :base.continuous_dim]*(1-eps))
+        self.init_correction_training()
+
+    def init_correction_training(self):
+        """Optimizer, counters and the (possibly adaptive) temperature of the correction."""
         self.flow_opt = torch.optim.Adam(self.flow.correction.parameters(), lr=self.dual['flow_lr'])
         self.flow_updates = 0
-        self.flow_metrics = dict(flow_updates=0)
+        self.flow_tau = float(self.dual['flow_tau'])
+        self.displacement_ema = None
+        self.flow_metrics = dict(flow_updates=0, flow_tau=self.flow_tau)
+
+    def adapt_tau(self, displacement):
+        """Dual ascent on log tau toward the mean-displacement target (trust region of BC)."""
+        d = self.dual
+        target = d.get('displacement_target')
+        if target is None:
+            return
+        self.displacement_ema = (displacement if self.displacement_ema is None
+                                 else .9*self.displacement_ema+.1*displacement)
+        error = min(max((self.displacement_ema-target)/target, -1.), 1.)
+        self.flow_tau = min(max(self.flow_tau*math.exp(d.get('tau_lr', .005)*error),
+                                d.get('tau_min', .01)), d.get('tau_max', 100.))
 
     def update(self, batch, train_actor=True):
         metrics = super().update(batch, train_actor)
@@ -103,6 +127,11 @@ class DualLearner(DSRLLearner):
 
     def update_flow(self, states):
         d, m = self.dual, self.dual['flow_samples']
+        if d.get('flow_states') is not None:
+            # Replay batches are uniform samples, so the first rows are a random subset. Fewer
+            # states with more candidates each keeps the cost (states x candidates) unchanged
+            # while letting the per-state best candidate lie further from typical BC.
+            states = states[:d['flow_states']]
         steps = self.cfg.get('train_flow_steps', self.cfg['flow_steps'])
         with torch.no_grad():
             rep = states.repeat_interleave(m, 0)
@@ -110,7 +139,7 @@ class DualLearner(DSRLLearner):
             y = self.flow.base_latent(rep, z, steps)
             q = self.action_value(self.action_critic, rep, torch.tanh(y)).reshape(-1, m)
             # Within-state weights: candidates compete only with each other, so no V(s) is needed.
-            w = torch.softmax(q/d['flow_tau'], -1)
+            w = torch.softmax(q/self.flow_tau, -1)
         loss = self.flow.matching_loss(rep, y, w.reshape(-1))
         tilt_loss, anchor = loss.item(), None
         if d['demo_weight'] > 0:
@@ -125,7 +154,10 @@ class DualLearner(DSRLLearner):
             # Same noise through the corrected and the BC flow: how far actions moved.
             k = min(len(states), 64)
             moved = (self.flow.decode(states[:k], z[::m][:k], steps)-torch.tanh(y[::m][:k])).abs()
+        tau_used = self.flow_tau
+        self.adapt_tau(moved.mean().item())
         self.flow_metrics = dict(flow_updates=self.flow_updates, flow_tilt_loss=tilt_loss,
+            flow_tau=tau_used, flow_displacement_ema=self.displacement_ema,
             flow_demo_loss=None if anchor is None else anchor.item(),
             flow_weight_ess=(1/w.square().sum(-1)).mean().item(),
             flow_q_spread=q.std(-1).mean().item(),
@@ -135,7 +167,8 @@ class DualLearner(DSRLLearner):
     def state_dict(self):
         state = super().state_dict()
         state.update(correction=self.flow.correction.state_dict(),
-                     flow_optimizer=self.flow_opt.state_dict(), flow_updates=self.flow_updates)
+                     flow_optimizer=self.flow_opt.state_dict(), flow_updates=self.flow_updates,
+                     flow_tau=self.flow_tau, displacement_ema=self.displacement_ema)
         return state
 
     def load_state_dict(self, state):
@@ -143,3 +176,6 @@ class DualLearner(DSRLLearner):
         self.flow.correction.load_state_dict(state['correction'])
         self.flow_opt.load_state_dict(state['flow_optimizer'])
         self.flow_updates = state['flow_updates']
+        # Checkpoints from before the adaptive temperature used the fixed config value.
+        self.flow_tau = state.get('flow_tau', float(self.dual['flow_tau']))
+        self.displacement_ema = state.get('displacement_ema')

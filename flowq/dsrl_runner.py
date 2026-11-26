@@ -70,11 +70,17 @@ def validate_config(cfg):
         if (dual['residual_bound'] <= 0 or dual['flow_lr'] <= 0 or dual['flow_tau'] <= 0
                 or dual['demo_weight'] < 0):
             raise ValueError('Invalid dual flow-correction settings')
-        for key in ('correction_hidden', 'correction_layers'):
+        for key in ('correction_hidden', 'correction_layers', 'flow_states'):
             if key in dual and (type(dual[key]) is not int or dual[key] < 1):
                 raise ValueError(f'{key} must be a positive integer')
         if type(dual.get('correction_layer_norm', False)) is not bool:
             raise ValueError('correction_layer_norm must be true or false')
+        for key in ('displacement_target', 'tau_lr', 'tau_min', 'tau_max'):
+            if key in dual and (type(dual[key]) not in (int, float) or not math.isfinite(dual[key])
+                                or dual[key] <= 0):
+                raise ValueError(f'{key} must be finite and positive')
+        if not dual.get('tau_min', .01) <= dual['flow_tau'] <= dual.get('tau_max', 100.):
+            raise ValueError('flow_tau must lie within [tau_min, tau_max]')
     for key in ('lr', 'grad_clip', 'kl_beta', 'prior_fraction', 'tau'):
         if not math.isfinite(d[key]):
             raise ValueError(f'Nonfinite DSRL setting: {key}')

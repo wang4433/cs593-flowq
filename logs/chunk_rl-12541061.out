@@ -1,0 +1,5 @@
+== 2026-11-25 10:38:40 unit tests
+Ran 34 tests in 74.107s
+
+OK (skipped=2)
+== 2026-11-25 10:41:11 train: seeds [0 1 2] x {dsrl, dual}, configs square_chunk_*_40k.json

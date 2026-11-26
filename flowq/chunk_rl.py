@@ -166,9 +166,7 @@ class ChunkDualLearner(DualLearner, ChunkDSRLLearner):
             # Same inward smoothing and coordinates as chunked BC training (ChunkFlow.loss).
             self.demo_states = states
             self.demo_targets = torch.atanh(chunks[..., :6]*(1-eps)).flatten(1)
-        self.flow_opt = torch.optim.Adam(self.flow.correction.parameters(), lr=self.dual['flow_lr'])
-        self.flow_updates = 0
-        self.flow_metrics = dict(flow_updates=0)
+        self.init_correction_training()
 
 
 def make_learner(base, cfg, demos=None):

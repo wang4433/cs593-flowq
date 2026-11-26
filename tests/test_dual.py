@@ -90,6 +90,38 @@ class DualTests(unittest.TestCase):
         self.assertEqual(metrics['flow_updates'], 300)
         self.assertGreater(metrics['flow_displacement_mean'], 0)
 
+    def test_adaptive_tau_holds_displacement_target(self):
+        cfg = dual_settings(flow_tau=1., displacement_target=.05, tau_lr=.1, tau_min=.1, tau_max=10.)
+        learner = DualLearner(self.flow, cfg)
+        learner.adapt_tau(.01)                       # moved less than the target -> sharper tilt
+        self.assertLess(learner.flow_tau, 1.)
+        for _ in range(200):
+            learner.adapt_tau(0.)
+        self.assertEqual(learner.flow_tau, .1)      # floored at tau_min
+        for _ in range(400):
+            learner.adapt_tau(1.)                    # moved more than the target -> back toward BC
+        self.assertEqual(learner.flow_tau, 10.)     # capped at tau_max
+        restored = DualLearner(self.flow, cfg)
+        restored.load_state_dict(learner.state_dict())
+        self.assertEqual((restored.flow_tau, restored.displacement_ema), (learner.flow_tau, learner.displacement_ema))
+        fixed = DualLearner(self.flow, dual_settings(flow_tau=.3))   # no target: tau never changes
+        fixed.adapt_tau(0.)
+        self.assertEqual(fixed.flow_tau, .3)
+        self.assertEqual(fixed.update_flow(torch.zeros(4, 4, dtype=DTYPE))['flow_tau'], .3)
+
+    def test_flow_update_uses_a_subset_of_states(self):
+        learner = DualLearner(self.flow, dual_settings(flow_samples=4, flow_states=2))
+        seen, decode = [], learner.flow.base_latent
+        learner.flow.base_latent = lambda s, z, steps=16: seen.append(len(s)) or decode(s, z, steps)
+        metrics = learner.update_flow(torch.randn(6, 4, dtype=DTYPE))
+        self.assertEqual(seen, [8])                  # 2 states x 4 candidates, not 6 x 4
+        self.assertTrue(1 <= metrics['flow_weight_ess'] <= 4)
+        everything = DualLearner(self.flow, dual_settings(flow_samples=4))
+        seen.clear()
+        everything.flow.base_latent = lambda s, z, steps=16: seen.append(len(s)) or decode(s, z, steps)
+        everything.update_flow(torch.randn(6, 4, dtype=DTYPE))
+        self.assertEqual(seen, [24])                 # without the key: every state in the batch
+
     def test_demo_anchor_requires_demonstrations(self):
         learner = DualLearner(self.flow, dual_settings(demo_weight=1.))
         with self.assertRaises(ValueError):
